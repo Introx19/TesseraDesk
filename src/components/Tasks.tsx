@@ -18,7 +18,7 @@ export default function Tasks() {
   const [inputText, setInputText] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('flowdesk-tasks');
+    const saved = localStorage.getItem('tesseradesk-tasks');
     if (saved) {
       try {
         setTasks(JSON.parse(saved));
@@ -29,7 +29,7 @@ export default function Tasks() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('flowdesk-tasks', JSON.stringify(tasks));
+    localStorage.setItem('tesseradesk-tasks', JSON.stringify(tasks));
   }, [tasks]);
 
   const addTask = () => {

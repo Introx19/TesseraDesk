@@ -68,7 +68,7 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
             animation: 'scaleIn 0.2s ease'
           }}>
             <h3 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--text-main)', fontSize: '1.1em' }}>
-              {modalState.options.title || 'FlowDesk'}
+              {modalState.options.title || 'TesseraDesk'}
             </h3>
             <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '0.9em', whiteSpace: 'pre-line' }}>
               {modalState.options.message}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare } from 'lucide-react';
+import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale } from 'lucide-react';
 import Stopwatch from './components/Stopwatch';
 import MiniTimer from './components/MiniTimer';
 import Reminders from './components/Reminders';
@@ -14,26 +14,27 @@ import PeriodicTable from './components/dlc/PeriodicTable';
 import Graphs from './components/dlc/Graphs';
 import Formulas from './components/dlc/Formulas';
 import Integrals from './components/dlc/Integrals';
+import Converter from './components/dlc/Converter';
 import Onboarding from './components/Onboarding';
 import { useSettings } from './contexts/SettingsContext';
 import { t, type Lang } from './i18n/texts';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals'>('stopwatch');
+  const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals' | 'converter'>('stopwatch');
   const [isPinned, setIsPinned] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [isMini, setIsMini] = useState(false);
   const [miniAnimating, setMiniAnimating] = useState(false);
   const [isOpaque, setIsOpaque] = useState(() => {
-    return localStorage.getItem('flowdesk-opaque') === 'true';
+    return localStorage.getItem('tesseradesk-opaque') === 'true';
   });
 
   const [showOpacitySlider, setShowOpacitySlider] = useState(false);
 
-  const { language, activeTools, dndMode, bgOpacity, updateSettings } = useSettings();
+  const { language, activeTools, dndMode, bgOpacity, multiScreenshot, updateSettings } = useSettings();
 
   useEffect(() => {
-    localStorage.setItem('flowdesk-opaque', String(isOpaque));
+    localStorage.setItem('tesseradesk-opaque', String(isOpaque));
     if (isOpaque) document.body.classList.add('opaque-bg');
     else document.body.classList.remove('opaque-bg');
   }, [isOpaque]);
@@ -54,6 +55,7 @@ function App() {
   if (hash.includes('desmos')) return <ToolWindowShell><Graphs /></ToolWindowShell>;
   if (hash.includes('formulas')) return <ToolWindowShell><Formulas /></ToolWindowShell>;
   if (hash.includes('integrals')) return <ToolWindowShell><Integrals /></ToolWindowShell>;
+  if (hash.includes('converter')) return <ToolWindowShell><Converter /></ToolWindowShell>;
 
   const togglePin = () => {
     const newPin = !isPinned;
@@ -79,6 +81,7 @@ function App() {
     if (activeTools.desmos) itemCount++;
     if (activeTools.formulas) itemCount++;
     if (activeTools.integrals) itemCount++;
+    if (activeTools.converter) itemCount++;
     let hasMedia = activeTools.screenshot || activeTools.paint;
     if (activeTools.screenshot) itemCount++;
     if (activeTools.paint) itemCount++;
@@ -128,7 +131,7 @@ function App() {
   };
 
   const takeScreenshot = () => {
-    if (window.electronAPI) window.electronAPI.takeScreenshot();
+    if (window.electronAPI) window.electronAPI.takeScreenshot(multiScreenshot);
   };
 
   return (
@@ -209,6 +212,7 @@ function App() {
         {activeTools.desmos && <div id="nav-desmos" className={`nav-item ${activeTab === 'desmos' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('desmos')} title={t(language as Lang, 'desmos')}><LineChart size={20} /></div>}
         {activeTools.formulas && <div id="nav-formulas" className={`nav-item ${activeTab === 'formulas' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('formulas')} title={t(language as Lang, 'formulas')}><BookOpen size={20} /></div>}
         {activeTools.integrals && <div id="nav-integrals" className={`nav-item ${activeTab === 'integrals' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('integrals')} title={t(language as Lang, 'integrals')}><FunctionSquare size={20} /></div>}
+        {activeTools.converter && <div id="nav-converter" className={`nav-item ${activeTab === 'converter' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('converter')} title={t(language as Lang, 'converter')}><Scale size={20} /></div>}
         
         {(activeTools.stopwatch || activeTools.minitimer || activeTools.reminders || activeTools.calc || activeTools.tasks || activeTools.notes) && (activeTools.screenshot || activeTools.paint) && (
           <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px auto' }}></div>
@@ -294,6 +298,7 @@ function App() {
           {activeTab === 'desmos' && <Graphs />}
           {activeTab === 'formulas' && <Formulas />}
           {activeTab === 'integrals' && <Integrals />}
+          {activeTab === 'converter' && <Converter />}
           {activeTab === 'settings' && <Settings />}
         </div>
       )}

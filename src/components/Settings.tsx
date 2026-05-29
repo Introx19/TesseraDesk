@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { Palette, Volume2, Keyboard, PenTool, Package, CheckCircle, DownloadCloud, Trash2 } from 'lucide-react';
+import { Palette, Volume2, Keyboard, PenTool, Package, CheckCircle, DownloadCloud, Trash2, Info } from 'lucide-react';
 import { t, type Lang } from '../i18n/texts';
 import { useModal } from '../contexts/ModalContext';
 
 const Settings: React.FC = () => {
-  const { theme, customAccent, volume, timerSound, shortcuts, activeTools, autoUpdate, updateSettings, pomodoroWork, pomodoroBreak, pomodoroEnabled, language } = useSettings();
-  const [activeTab, setActiveTab] = useState<'interface' | 'sound' | 'hotkeys' | 'tools' | 'dlc'>('interface');
+  const { theme, customAccent, volume, timerSound, shortcuts, activeTools, autoUpdate, updateSettings, pomodoroWork, pomodoroBreak, pomodoroEnabled, language, multiScreenshot } = useSettings();
+  const [activeTab, setActiveTab] = useState<'interface' | 'sound' | 'hotkeys' | 'tools' | 'dlc' | 'about'>('interface');
   const [localShortcuts, setLocalShortcuts] = useState(shortcuts);
   const modal = useModal();
 
@@ -51,7 +51,8 @@ const Settings: React.FC = () => {
           periodicTable: activeTools.periodicTable, 
           desmos: activeTools.desmos, 
           formulas: activeTools.formulas,
-          integrals: activeTools.integrals
+          integrals: activeTools.integrals,
+          converter: activeTools.converter
         }
       };
       updateSettings(defaultState);
@@ -136,14 +137,15 @@ const Settings: React.FC = () => {
         )}
       </div>
 
-      <h3 style={{marginBottom: '10px'}}>{t(language as Lang, 'aboutApp')}</h3>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '5px' }}>
-        <button className="action-btn active" onClick={handleCheckUpdates}>{t(language as Lang, 'checkUpdates')}</button>
-        <button className="action-btn outline" onClick={() => window.dispatchEvent(new Event('trigger-onboarding'))}>{t(language as Lang, 'launchTutorial')}</button>
-      </div>
-      <div style={{ marginBottom: '20px', fontSize: '0.85em', color: 'var(--text-muted)' }}>
-        {t(language as Lang, 'currentVersion')} 1.0.3
-      </div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '10px', marginTop: '10px' }}>
+        <input 
+          type="checkbox" 
+          checked={multiScreenshot} 
+          onChange={(e) => updateSettings({ multiScreenshot: e.target.checked })}
+          style={{ accentColor: 'var(--accent)', width: '16px', height: '16px' }}
+        />
+        {t(language as Lang, 'multiScreenshot')}
+      </label>
 
       <h3 style={{marginBottom: '10px'}}>{t(language as Lang, 'interfaceLanguage')}</h3>
       <div style={{ marginBottom: '20px' }}>
@@ -396,6 +398,12 @@ const Settings: React.FC = () => {
       name: t(language as Lang, 'dlc_integrals_name'),
       desc: t(language as Lang, 'dlc_integrals_desc'),
       isInstalled: activeTools.integrals
+    },
+    {
+      id: 'converter',
+      name: t(language as Lang, 'dlc_converter_name'),
+      desc: t(language as Lang, 'dlc_converter_desc'),
+      isInstalled: activeTools.converter
     }
   ];
 
@@ -483,6 +491,9 @@ const Settings: React.FC = () => {
         <div className={`settings-tab ${activeTab === 'dlc' ? 'active' : ''}`} onClick={() => setActiveTab('dlc')}>
           <Package size={18} /> {t(language as Lang, 'tools')}
         </div>
+        <div className={`settings-tab ${activeTab === 'about' ? 'active' : ''}`} onClick={() => setActiveTab('about')}>
+          <Info size={18} /> {t(language as Lang, 'tabAbout')}
+        </div>
       </div>
       <div className="settings-content">
         <h2>
@@ -491,12 +502,33 @@ const Settings: React.FC = () => {
           {activeTab === 'hotkeys' && t(language as Lang, 'tabHotkeys')}
           {activeTab === 'tools' && t(language as Lang, 'tabTools')}
           {activeTab === 'dlc' && t(language as Lang, 'tabDlc')}
+          {activeTab === 'about' && t(language as Lang, 'tabAbout')}
         </h2>
         {activeTab === 'interface' && renderInterface()}
         {activeTab === 'sound' && renderSound()}
         {activeTab === 'hotkeys' && renderHotkeys()}
         {activeTab === 'tools' && renderTools()}
         {activeTab === 'dlc' && renderDlc()}
+        
+        {activeTab === 'about' && (
+          <div className="settings-section">
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.4</div>
+            </div>
+            
+            <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>
+              <p style={{ marginTop: 0, marginBottom: '10px' }}>{t(language as Lang, 'aboutDesc')}</p>
+              <p style={{ marginBottom: '10px', color: 'var(--accent)' }}>{t(language as Lang, 'aboutAmateur')}</p>
+              <p style={{ marginBottom: 0 }}>{t(language as Lang, 'aboutFeedback')}</p>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button className="action-btn active" onClick={handleCheckUpdates}>{t(language as Lang, 'checkUpdates')}</button>
+              <button className="action-btn outline" onClick={() => window.dispatchEvent(new Event('trigger-onboarding'))}>{t(language as Lang, 'launchTutorial')}</button>
+            </div>
+          </div>
+        )}
         
         <div style={{ marginTop: '30px', borderTop: '1px solid var(--glass-border)', paddingTop: '15px' }}>
           <button className="action-btn outline-danger" onClick={resetAllSettings}>

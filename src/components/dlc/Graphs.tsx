@@ -35,7 +35,7 @@ export default function Graphs() {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [equations, setEquations] = useState<Equation[]>(() => {
-    const saved = localStorage.getItem('flowdesk-graphs');
+    const saved = localStorage.getItem('tesseradesk-graphs');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -51,7 +51,7 @@ export default function Graphs() {
 
   useEffect(() => {
     const toSave = equations.map(eq => ({ id: eq.id, expr: eq.expr, color: eq.color, showAnalysis: eq.showAnalysis }));
-    localStorage.setItem('flowdesk-graphs', JSON.stringify(toSave));
+    localStorage.setItem('tesseradesk-graphs', JSON.stringify(toSave));
   }, [equations]);
 
   // Compile equations when they change

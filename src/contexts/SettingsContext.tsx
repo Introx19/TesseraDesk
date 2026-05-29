@@ -15,6 +15,7 @@ export interface SettingsState {
   pomodoroBreak: number;
   dndMode: boolean;
   autoUpdate: boolean;
+  multiScreenshot: boolean;
   shortcuts: {
     toggleApp: string;
     openCalc: string;
@@ -36,6 +37,7 @@ export interface SettingsState {
     desmos: boolean;
     formulas: boolean;
     integrals: boolean;
+    converter: boolean;
   };
 }
 
@@ -52,6 +54,7 @@ const defaultSettings: SettingsState = {
   pomodoroBreak: 5,
   dndMode: false,
   autoUpdate: true,
+  multiScreenshot: false,
   shortcuts: {
     toggleApp: '',
     openCalc: '',
@@ -73,6 +76,7 @@ const defaultSettings: SettingsState = {
     desmos: false,
     formulas: false,
     integrals: false,
+    converter: false,
   }
 };
 
@@ -84,7 +88,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<SettingsState>(() => {
-    const saved = localStorage.getItem('flowdesk-settings');
+    const saved = localStorage.getItem('tesseradesk-settings');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -102,7 +106,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   useEffect(() => {
-    localStorage.setItem('flowdesk-settings', JSON.stringify(settings));
+    localStorage.setItem('tesseradesk-settings', JSON.stringify(settings));
     
     if (window.electronAPI) {
       window.electronAPI.updateShortcuts(settings.shortcuts);

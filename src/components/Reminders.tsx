@@ -15,7 +15,7 @@ export default function Reminders() {
   const { timerSound, volume, dndMode, language } = useSettings();
   const modal = useModal();
   const [reminders, setReminders] = useState<Reminder[]>(() => {
-    const saved = localStorage.getItem('flowdesk-reminders');
+    const saved = localStorage.getItem('tesseradesk-reminders');
     return saved ? JSON.parse(saved) : [];
   });
   
@@ -23,7 +23,7 @@ export default function Reminders() {
   const [newTime, setNewTime] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('flowdesk-reminders', JSON.stringify(reminders));
+    localStorage.setItem('tesseradesk-reminders', JSON.stringify(reminders));
   }, [reminders]);
 
   useEffect(() => {

@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.DIST = path.join(__dirname, '../dist')
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
 
-app.setAppUserModelId('com.flowdesk.app');
+app.setAppUserModelId('com.tesseradesk.app');
 
 let mainWindow: BrowserWindow | null
 let tray: Tray | null = null;
@@ -67,7 +67,7 @@ app.whenReady().then(() => {
   tray = new Tray(trayIcon);
   
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Открыть FlowDesk', click: () => {
+    { label: 'Открыть TesseraDesk', click: () => {
         mainWindow?.show();
     }},
     { type: 'separator' },
@@ -76,7 +76,7 @@ app.whenReady().then(() => {
     }}
   ]);
   
-  tray.setToolTip('FlowDesk');
+  tray.setToolTip('TesseraDesk');
   tray.setContextMenu(contextMenu);
   tray.on('click', () => {
     mainWindow?.show();
@@ -141,12 +141,13 @@ ipcMain.on('open-paint', (event, filePath) => {
 
 let previewWindow: BrowserWindow | null = null;
 
-ipcMain.on('close-preview-window', () => {
-    previewWindow?.close();
-    previewWindow = null;
+ipcMain.on('close-preview-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.close();
+    if (win === previewWindow) previewWindow = null;
 });
 
-ipcMain.on('take-screenshot', (event) => {
+ipcMain.on('take-screenshot', (event, multiMode) => {
   clipboard.clear();
   if (isAppCompact) mainWindow?.hide(); // Скрываем только скрытое (компактное) меню при начале скриншота
   exec('start ms-screenclip:');
@@ -159,7 +160,7 @@ ipcMain.on('take-screenshot', (event) => {
       clearInterval(pollInterval);
       const dataUrl = image.toDataURL();
       
-      if (previewWindow) previewWindow.close();
+      if (!multiMode && previewWindow) previewWindow.close();
       if (isAppCompact) mainWindow?.show(); // Возвращаем скрытое меню после скриншота
       
       previewWindow = new BrowserWindow({
@@ -223,9 +224,10 @@ ipcMain.on('show-screenshot-menu', (event, dataUrl, strings) => {
         const buffer = Buffer.from(base64Data, 'base64');
         fs.writeFileSync(tempPath, buffer);
         exec(`mspaint "${tempPath}"`);
-        if (previewWindow) {
-            previewWindow.close();
-            previewWindow = null;
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (win) {
+            win.close();
+            if (win === previewWindow) previewWindow = null;
         }
       }
     }

@@ -3,7 +3,7 @@ export interface ElectronAPI {
   windowClose: () => void;
   windowMinimize: () => void;
   openPaint: (filePath?: string) => void;
-  takeScreenshot: () => void;
+  takeScreenshot: (multiMode?: boolean) => void;
   setCompactMode: (isCompact: boolean) => void;
   openToolWindow: (tool: string) => void;
   showScreenshotMenu: (dataUrl: string, strings?: any) => void;

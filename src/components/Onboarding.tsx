@@ -10,7 +10,7 @@ export default function Onboarding() {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
-    if (!localStorage.getItem('flowdesk-tutorial-seen')) {
+    if (!localStorage.getItem('tesseradesk-tutorial-seen')) {
         setIsVisible(true);
     }
     
@@ -24,7 +24,7 @@ export default function Onboarding() {
   }, []);
 
   const stepsRu = [
-    { target: null, title: 'Добро пожаловать в FlowDesk', text: 'Давайте пройдем быстрое обучение по всем функциям! (Hub версия 1.0)' },
+    { target: null, title: 'Добро пожаловать в TesseraDesk', text: 'Давайте пройдем быстрое обучение по всем функциям! (Hub версия 1.0)' },
     { target: 'nav-stopwatch', title: 'Управление Временем', text: '✔ Секундомер и Pomodoro-таймер для фокуса.' },
     { target: 'nav-minitimer', title: 'Мини-таймер', text: '✔ Компактный плавающий таймер для рабочего стола.' },
     { target: 'nav-reminders', title: 'Напоминания', text: '✔ Оставляйте себе будильники и важные заметки по времени.' },
@@ -40,7 +40,7 @@ export default function Onboarding() {
   ];
 
   const stepsEn = [
-    { target: null, title: 'Welcome to FlowDesk', text: 'Let\'s take a quick tour of all features! (Hub Version 1.0)' },
+    { target: null, title: 'Welcome to TesseraDesk', text: 'Let\'s take a quick tour of all features! (Hub Version 1.0)' },
     { target: 'nav-stopwatch', title: 'Time Management', text: '✔ Stopwatch and Pomodoro timer for deep focus.' },
     { target: 'nav-minitimer', title: 'Mini Timer', text: '✔ Compact floating timer for your desktop.' },
     { target: 'nav-reminders', title: 'Reminders', text: '✔ Set alarms and time-based important notes.' },
@@ -59,11 +59,13 @@ export default function Onboarding() {
   const currentStepInfo = steps[step];
 
   useEffect(() => {
+    document.querySelectorAll('.onboarding-highlight').forEach(el => el.classList.remove('onboarding-highlight'));
     if (langPicked && currentStepInfo?.target) {
       // Small delay to allow react rendering 
       setTimeout(() => {
         const el = document.getElementById(currentStepInfo.target!);
         if (el) {
+          el.classList.add('onboarding-highlight');
           setTargetRect(el.getBoundingClientRect());
         } else {
           // If element doesn't exist (e.g. disabled tool), skip to next
@@ -81,15 +83,31 @@ export default function Onboarding() {
   if (!isVisible) return null;
 
   const close = () => {
-    localStorage.setItem('flowdesk-tutorial-seen', 'true');
+    document.querySelectorAll('.onboarding-highlight').forEach(el => el.classList.remove('onboarding-highlight'));
+    localStorage.setItem('tesseradesk-tutorial-seen', 'true');
     setIsVisible(false);
   };
 
+  const hasHole = langPicked && !!targetRect;
+
   return (
     <div style={{
-      position: 'absolute', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s'
+      position: 'absolute', inset: 0, zIndex: 9999, 
+      background: hasHole ? 'transparent' : 'rgba(0,0,0,0.85)',
+      pointerEvents: 'auto', overflow: 'hidden',
+      display: hasHole ? 'block' : 'flex', 
+      alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s'
     }}>
+      {hasHole && (
+        <div style={{
+          position: 'absolute',
+          top: targetRect.top - 5, left: targetRect.left - 5,
+          width: targetRect.width + 10, height: targetRect.height + 10,
+          border: '2px solid var(--accent)', borderRadius: '8px',
+          boxShadow: '0 0 15px var(--accent-glow), 0 0 0 9999px rgba(0,0,0,0.85)',
+          pointerEvents: 'none', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+        }} />
+      )}
       {!langPicked ? (
         <div style={{
           background: 'var(--bg-main)', width: '380px', padding: '25px', borderRadius: '16px',

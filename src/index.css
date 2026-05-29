@@ -308,7 +308,7 @@ body {
 }
 
 .settings-sidebar {
-  width: 130px;
+  width: 175px;
   background: rgba(0, 0, 0, 0.1);
   border-right: 1px solid var(--glass-border);
   display: flex;
@@ -330,6 +330,7 @@ body {
   font-size: 0.9em;
   transition: all 0.2s;
   border-left: 3px solid transparent;
+  white-space: nowrap;
 }
 
 .settings-tab:hover {
@@ -474,4 +475,11 @@ select.task-input option {
   content: attr(data-placeholder);
   color: rgba(255, 255, 255, 0.4);
   cursor: text;
+}
+
+.onboarding-highlight {
+  position: relative !important;
+  z-index: 10000 !important;
+  background: var(--bg-card) !important;
+  box-shadow: 0 0 15px var(--accent-glow) !important;
 }

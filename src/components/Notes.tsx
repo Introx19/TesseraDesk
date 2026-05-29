@@ -13,11 +13,11 @@ export default function Notes() {
   
   const [noteHTML, setNoteHTML] = useState(() => {
     // Migrate old plain text to HTML gracefully
-    const oldHtml = localStorage.getItem('flowdesk-note-html');
+    const oldHtml = localStorage.getItem('tesseradesk-note-html');
     if (oldHtml !== null) return oldHtml;
     
     // Fallback if old plain-text notes exist
-    const oldText = localStorage.getItem('flowdesk-note') || '';
+    const oldText = localStorage.getItem('tesseradesk-note') || '';
     return oldText; 
   });
   const initialLoadRef = useRef(false);
@@ -30,7 +30,7 @@ export default function Notes() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('flowdesk-note-html', noteHTML);
+    localStorage.setItem('tesseradesk-note-html', noteHTML);
   }, [noteHTML]);
 
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
