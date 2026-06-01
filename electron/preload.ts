@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setCompactMode: (isCompact: boolean, height?: number) => ipcRenderer.send('set-compact-mode', isCompact, height),
   openToolWindow: (tool: string) => ipcRenderer.send('open-tool-window', tool),
   showScreenshotMenu: (dataUrl: string, strings?: Record<string, string>) => ipcRenderer.send('show-screenshot-menu', dataUrl, strings),
+  sendCroppedScreenshot: (dataUrl: string, multiMode: boolean) => ipcRenderer.send('cropped-screenshot', dataUrl, multiMode),
   onScreenshotData: (callback: (dataUrl: string) => void) => {
     ipcRenderer.on('load-screenshot-data', (_event, data) => callback(data))
   },

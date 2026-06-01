@@ -477,6 +477,12 @@ select.task-input option {
   cursor: text;
 }
 
+.rich-editor ul,
+.rich-editor ol {
+  padding-left: 24px;
+  margin: 8px 0;
+}
+
 .onboarding-highlight {
   position: relative !important;
   z-index: 10000 !important;

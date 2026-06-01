@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, globalShortcut, clipboard, Menu, dialog, nativeImage, protocol, Notification, Tray, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, globalShortcut, clipboard, Menu, dialog, nativeImage, protocol, Notification, Tray, screen, desktopCapturer } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { exec } from 'node:child_process'
@@ -140,56 +140,113 @@ ipcMain.on('open-paint', (event, filePath) => {
 });
 
 let previewWindow: BrowserWindow | null = null;
+let selectWindow: BrowserWindow | null = null;
 
 ipcMain.on('close-preview-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) win.close();
     if (win === previewWindow) previewWindow = null;
+    if (win === selectWindow) selectWindow = null;
+});
+
+async function takeScreenshot(multiMode: boolean = false) {
+  clipboard.clear();
+  if (isAppCompact) mainWindow?.hide(); // Скрываем только скрытое (компактное) меню при начале скриншота
+  
+  try {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const scaleFactor = primaryDisplay.scaleFactor;
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { 
+        width: primaryDisplay.size.width * scaleFactor, 
+        height: primaryDisplay.size.height * scaleFactor 
+      }
+    });
+    
+    if (sources.length === 0) throw new Error('No screen sources found');
+    
+    // First source is usually the primary screen
+    const primarySource = sources[0];
+    const dataUrl = primarySource.thumbnail.toDataURL();
+    
+    if (selectWindow) selectWindow.close();
+    
+    selectWindow = new BrowserWindow({
+      x: primaryDisplay.bounds.x,
+      y: primaryDisplay.bounds.y,
+      width: primaryDisplay.bounds.width,
+      height: primaryDisplay.bounds.height,
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      enableLargerThanScreen: true,
+      resizable: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.mjs'),
+        contextIsolation: true,
+      }
+    });
+
+    selectWindow.setAlwaysOnTop(true, 'screen-saver');
+
+    if (process.env.VITE_DEV_SERVER_URL) {
+      selectWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/screenshot-select');
+    } else {
+      selectWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/screenshot-select' });
+    }
+
+    selectWindow.webContents.on('did-finish-load', () => {
+      selectWindow?.webContents.send('load-screenshot-data', dataUrl);
+    });
+    
+    selectWindow.on('closed', () => {
+      selectWindow = null;
+      if (isAppCompact && !previewWindow) mainWindow?.show();
+    });
+
+  } catch (err) {
+    console.error('Screenshot failed:', err);
+    if (isAppCompact) mainWindow?.show();
+  }
+}
+
+ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
+  if (selectWindow) selectWindow.close();
+  
+  if (!multiMode && previewWindow) previewWindow.close();
+  
+  previewWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    frame: false,
+    alwaysOnTop: true,
+    transparent: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      contextIsolation: true,
+    }
+  });
+  
+  if (process.env.VITE_DEV_SERVER_URL) {
+    previewWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/preview');
+  } else {
+    previewWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/preview' });
+  }
+
+  previewWindow.webContents.on('did-finish-load', () => {
+    previewWindow?.webContents.send('load-screenshot-data', croppedDataUrl);
+  });
+  
+  previewWindow.on('closed', () => {
+    previewWindow = null;
+    if (isAppCompact && !selectWindow) mainWindow?.show();
+  });
 });
 
 ipcMain.on('take-screenshot', (event, multiMode) => {
-  clipboard.clear();
-  if (isAppCompact) mainWindow?.hide(); // Скрываем только скрытое (компактное) меню при начале скриншота
-  exec('start ms-screenclip:');
-  
-  let attempts = 0;
-  const pollInterval = setInterval(() => {
-    attempts++;
-    const image = clipboard.readImage();
-    if (!image.isEmpty()) {
-      clearInterval(pollInterval);
-      const dataUrl = image.toDataURL();
-      
-      if (!multiMode && previewWindow) previewWindow.close();
-      if (isAppCompact) mainWindow?.show(); // Возвращаем скрытое меню после скриншота
-      
-      previewWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        frame: false,
-        alwaysOnTop: true,
-        transparent: true,
-        webPreferences: {
-          preload: path.join(__dirname, 'preload.mjs'),
-          contextIsolation: true,
-        }
-      });
-      
-      if (process.env.VITE_DEV_SERVER_URL) {
-        previewWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/preview');
-      } else {
-        previewWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/preview' });
-      }
-
-      previewWindow.webContents.on('did-finish-load', () => {
-        previewWindow?.webContents.send('load-screenshot-data', dataUrl);
-      });
-      
-    } else if (attempts > 300) { 
-      clearInterval(pollInterval);
-      if (isAppCompact) mainWindow?.show(); // Возвращаем если скриншот отменен
-    }
-  }, 100);
+  takeScreenshot(multiMode);
 });
 
 ipcMain.on('show-screenshot-menu', (event, dataUrl, strings) => {
@@ -333,6 +390,9 @@ ipcMain.on('update-shortcuts', (event, shortcuts) => {
     if (currentShortcuts.toggleApp) globalShortcut.unregister(currentShortcuts.toggleApp);
     if (currentShortcuts.openCalc) globalShortcut.unregister(currentShortcuts.openCalc);
     if (currentShortcuts.openStopwatch) globalShortcut.unregister(currentShortcuts.openStopwatch);
+    if (currentShortcuts.openMinitimer) globalShortcut.unregister(currentShortcuts.openMinitimer);
+    if (currentShortcuts.openReminders) globalShortcut.unregister(currentShortcuts.openReminders);
+    if (currentShortcuts.openScreenshot) globalShortcut.unregister(currentShortcuts.openScreenshot);
     
     if (shortcuts.toggleApp) {
       globalShortcut.register(shortcuts.toggleApp, () => {
@@ -350,6 +410,9 @@ ipcMain.on('update-shortcuts', (event, shortcuts) => {
     }
     if (shortcuts.openReminders) {
       globalShortcut.register(shortcuts.openReminders, () => openToolWin('reminders'));
+    }
+    if (shortcuts.openScreenshot) {
+      globalShortcut.register(shortcuts.openScreenshot, () => takeScreenshot(false));
     }
     currentShortcuts = shortcuts;
   } catch (e) {

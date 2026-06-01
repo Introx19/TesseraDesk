@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Image as ImageIcon, Bold, Italic, Strikethrough, List, CheckSquare } from 'lucide-react';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useSettings } from '../contexts/SettingsContext';
 import { t, type Lang } from '../i18n/texts';
@@ -43,6 +43,28 @@ export default function Notes() {
       if (editorRef.current) {
          editorRef.current.innerHTML = '';
       }
+    }
+  };
+
+  const applyFormat = (command: string) => {
+    document.execCommand(command, false);
+    editorRef.current?.focus();
+    if (editorRef.current) setNoteHTML(editorRef.current.innerHTML);
+  };
+
+  const insertCheckbox = () => {
+    const html = `<input type="checkbox" style="margin-right: 8px; cursor: pointer;">&nbsp;`;
+    document.execCommand('insertHTML', false, html);
+    editorRef.current?.focus();
+    if (editorRef.current) setNoteHTML(editorRef.current.innerHTML);
+  };
+
+  const handleEditorClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+      setTimeout(() => {
+        if (editorRef.current) setNoteHTML(editorRef.current.innerHTML);
+      }, 0);
     }
   };
 
@@ -148,11 +170,23 @@ export default function Notes() {
         </div>
       )}
       
+      {!isXs && !isSm && (
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', padding: '5px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px' }}>
+          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('bold')} title="Bold"><Bold size={16} /></button>
+          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('italic')} title="Italic"><Italic size={16} /></button>
+          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('strikeThrough')} title="Strikethrough"><Strikethrough size={16} /></button>
+          <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 5px' }}></div>
+          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('insertUnorderedList')} title="List"><List size={16} /></button>
+          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={insertCheckbox} title="Checkbox"><CheckSquare size={16} /></button>
+        </div>
+      )}
+
       <div
         ref={editorRef}
         className="task-input rich-editor custom-scrollbar"
         contentEditable
         onInput={handleInput}
+        onClick={handleEditorClick}
         onPaste={handlePaste}
         onDrop={handleDrop}
         onDragOver={handleDragOver}

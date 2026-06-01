@@ -41,7 +41,8 @@ const Settings: React.FC = () => {
           openCalc: 'CommandOrControl+Space', 
           openStopwatch: 'CommandOrControl+Shift+T',
           openMinitimer: 'CommandOrControl+Shift+M',
-          openReminders: 'CommandOrControl+Shift+R'
+          openReminders: 'CommandOrControl+Shift+R',
+          openScreenshot: ''
         },
         pomodoroWork: 25,
         pomodoroBreak: 5,
@@ -62,7 +63,7 @@ const Settings: React.FC = () => {
 
   const resetHotkeys = async () => {
     if (await modal.confirm(t(language as Lang, 'confirmResetShortcuts'))) {
-      const defaultShortcuts = { toggleApp: '', openCalc: '', openStopwatch: '', openMinitimer: '', openReminders: '' };
+      const defaultShortcuts = { toggleApp: '', openCalc: '', openStopwatch: '', openMinitimer: '', openReminders: '', openScreenshot: '' };
       setLocalShortcuts(defaultShortcuts);
       updateSettings({ shortcuts: defaultShortcuts });
     }
@@ -295,6 +296,17 @@ const Settings: React.FC = () => {
             readOnly
           />
         </div>
+
+        <div className="shortcut-row">
+          <label style={{ flex: 1 }}>{t(language as Lang, 'openScreenshotShortcut')}</label>
+          <input 
+            type="text" 
+            className="task-input shortcut-input" 
+            value={localShortcuts.openScreenshot || ''} 
+            onKeyDown={(e) => handleShortcutChange('openScreenshot' as any, e)}
+            readOnly
+          />
+        </div>
         
         <div style={{ marginTop: '15px' }}>
           <button className="action-btn outline" onClick={resetHotkeys}>
@@ -404,6 +416,12 @@ const Settings: React.FC = () => {
       name: t(language as Lang, 'dlc_converter_name'),
       desc: t(language as Lang, 'dlc_converter_desc'),
       isInstalled: activeTools.converter
+    },
+    {
+      id: 'worldClock',
+      name: t(language as Lang, 'dlc_worldClock_name' as any),
+      desc: t(language as Lang, 'dlc_worldClock_desc' as any),
+      isInstalled: activeTools.worldClock
     }
   ];
 
@@ -514,7 +532,7 @@ const Settings: React.FC = () => {
           <div className="settings-section">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.4</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.5</div>
             </div>
             
             <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>

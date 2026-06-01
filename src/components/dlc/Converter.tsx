@@ -3,7 +3,7 @@ import { t, type Lang } from '../../i18n/texts';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Scale } from 'lucide-react';
 
-type Category = 'length' | 'mass' | 'temp' | 'data' | 'area' | 'speed' | 'volume';
+type Category = 'length' | 'mass' | 'temp' | 'data' | 'area' | 'speed' | 'volume' | 'currency';
 
 const units = {
   length: {
@@ -55,6 +55,18 @@ const units = {
     m3: { name: 'Cubic Meters', factor: 1000 },
     gal: { name: 'Gallons (US)', factor: 3.78541 },
     oz: { name: 'Fluid Ounces (US)', factor: 0.0295735 },
+  },
+  currency: {
+    USD: { name: 'US Dollar', rate: 1 },
+    EUR: { name: 'Euro', rate: 0.85 },
+    CAD: { name: 'Canadian Dollar', rate: 1.37 },
+    RUB: { name: 'Russian Ruble', rate: 90 },
+    BYN: { name: 'Belarusian Ruble', rate: 3.2 },
+    KZT: { name: 'Kazakhstani Tenge', rate: 450 },
+    UAH: { name: 'Ukrainian Hryvnia', rate: 39 },
+    GBP: { name: 'British Pound', rate: 0.78 },
+    JPY: { name: 'Japanese Yen', rate: 150 },
+    CNY: { name: 'Chinese Yuan', rate: 7.2 }
   }
 };
 
@@ -69,6 +81,14 @@ const convert = (value: number, from: string, to: string, category: Category): n
     if (to === 'f') return (c * 9 / 5) + 32;
     if (to === 'k') return c + 273.15;
     return 0;
+  }
+  
+  if (category === 'currency') {
+    const catUnits = (units as any)[category];
+    if (!catUnits || !catUnits[from] || !catUnits[to]) return 0;
+    const rateFrom = catUnits[from].rate;
+    const rateTo = catUnits[to].rate;
+    return (value / rateFrom) * rateTo;
   }
   
   const catUnits = (units as any)[category];
@@ -140,6 +160,38 @@ const Converter: React.FC = () => {
   const catUnits = Object.keys(units[cat]);
   const [unit1, setUnit1] = useState<string>(catUnits[0]);
   const [unit2, setUnit2] = useState<string>(catUnits[1] || catUnits[0]);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+  
+  useEffect(() => {
+    const cached = localStorage.getItem('tessera_rates');
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        Object.keys(units.currency).forEach(k => {
+          if (data.rates[k]) (units.currency as any)[k].rate = data.rates[k];
+        });
+        setLastUpdate(new Date(data.time_last_update_unix * 1000).toLocaleDateString());
+      } catch (e) {}
+    }
+    
+    fetch('https://open.er-api.com/v6/latest/USD')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rates) {
+          localStorage.setItem('tessera_rates', JSON.stringify(data));
+          Object.keys(units.currency).forEach(k => {
+            if (data.rates[k]) (units.currency as any)[k].rate = data.rates[k];
+          });
+          setLastUpdate(new Date(data.time_last_update_unix * 1000).toLocaleDateString());
+          if (cat === 'currency') setVal1(v => v + ' '); // trigger re-render
+        }
+      }).catch(e => console.log('Rates fetch error:', e));
+  }, []);
+  
+  // Clean up trigger re-render hack
+  useEffect(() => {
+    if (val1.endsWith(' ')) setVal1(val1.trim());
+  }, [val1]);
   
   const handleCatChange = (newCat: Category) => {
     setCat(newCat);
@@ -161,9 +213,16 @@ const Converter: React.FC = () => {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', color: 'var(--text-main)', padding: '20px' }}>
-      <h2 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Scale size={24} color="var(--accent)" />
-        {t(language as Lang, 'dlc_converter_name')}
+      <h2 style={{ margin: '0 0 15px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Scale size={24} color="var(--accent)" />
+          {t(language as Lang, 'dlc_converter_name')}
+        </div>
+        {cat === 'currency' && lastUpdate && (
+          <span style={{ fontSize: '0.45em', color: 'var(--text-muted)', fontWeight: 'normal' }}>
+            {t(language as Lang, 'rates_updated' as any) || 'Rates:'} {lastUpdate}
+          </span>
+        )}
       </h2>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '20px' }}>

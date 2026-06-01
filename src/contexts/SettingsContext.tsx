@@ -22,6 +22,7 @@ export interface SettingsState {
     openStopwatch: string;
     openMinitimer: string;
     openReminders: string;
+    openScreenshot: string;
   };
   activeTools: {
     stopwatch: boolean;
@@ -38,6 +39,7 @@ export interface SettingsState {
     formulas: boolean;
     integrals: boolean;
     converter: boolean;
+    worldClock: boolean;
   };
 }
 
@@ -61,6 +63,7 @@ const defaultSettings: SettingsState = {
     openStopwatch: '',
     openMinitimer: '',
     openReminders: '',
+    openScreenshot: '',
   },
   activeTools: {
     stopwatch: true,
@@ -77,6 +80,7 @@ const defaultSettings: SettingsState = {
     formulas: false,
     integrals: false,
     converter: false,
+    worldClock: false,
   }
 };
 

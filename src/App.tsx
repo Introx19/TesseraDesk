@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale } from 'lucide-react';
+import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale, Globe } from 'lucide-react';
 import Stopwatch from './components/Stopwatch';
 import MiniTimer from './components/MiniTimer';
 import Reminders from './components/Reminders';
@@ -15,12 +15,14 @@ import Graphs from './components/dlc/Graphs';
 import Formulas from './components/dlc/Formulas';
 import Integrals from './components/dlc/Integrals';
 import Converter from './components/dlc/Converter';
+import WorldClock from './components/dlc/WorldClock';
+import ScreenshotSelect from './components/ScreenshotSelect';
 import Onboarding from './components/Onboarding';
 import { useSettings } from './contexts/SettingsContext';
 import { t, type Lang } from './i18n/texts';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals' | 'converter'>('stopwatch');
+  const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals' | 'converter' | 'worldClock'>('stopwatch');
   const [isPinned, setIsPinned] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [isMini, setIsMini] = useState(false);
@@ -45,6 +47,7 @@ function App() {
   // Render Popups / specific tools if launched via hash
   if (hash.includes('notification')) return <NotificationPopup />;
   if (isPreview) return <ScreenshotPreview />;
+  if (hash.includes('screenshot-select')) return <ScreenshotSelect />;
   if (hash.includes('stopwatch')) return <ToolWindowShell><Stopwatch /></ToolWindowShell>;
   if (hash.includes('minitimer')) return <ToolWindowShell><MiniTimer /></ToolWindowShell>;
   if (hash.includes('reminders')) return <ToolWindowShell><Reminders /></ToolWindowShell>;
@@ -56,6 +59,7 @@ function App() {
   if (hash.includes('formulas')) return <ToolWindowShell><Formulas /></ToolWindowShell>;
   if (hash.includes('integrals')) return <ToolWindowShell><Integrals /></ToolWindowShell>;
   if (hash.includes('converter')) return <ToolWindowShell><Converter /></ToolWindowShell>;
+  if (hash.includes('worldClock')) return <ToolWindowShell><WorldClock /></ToolWindowShell>;
 
   const togglePin = () => {
     const newPin = !isPinned;
@@ -82,6 +86,7 @@ function App() {
     if (activeTools.formulas) itemCount++;
     if (activeTools.integrals) itemCount++;
     if (activeTools.converter) itemCount++;
+    if (activeTools.worldClock) itemCount++;
     let hasMedia = activeTools.screenshot || activeTools.paint;
     if (activeTools.screenshot) itemCount++;
     if (activeTools.paint) itemCount++;
@@ -213,6 +218,7 @@ function App() {
         {activeTools.formulas && <div id="nav-formulas" className={`nav-item ${activeTab === 'formulas' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('formulas')} title={t(language as Lang, 'formulas')}><BookOpen size={20} /></div>}
         {activeTools.integrals && <div id="nav-integrals" className={`nav-item ${activeTab === 'integrals' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('integrals')} title={t(language as Lang, 'integrals')}><FunctionSquare size={20} /></div>}
         {activeTools.converter && <div id="nav-converter" className={`nav-item ${activeTab === 'converter' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('converter')} title={t(language as Lang, 'converter')}><Scale size={20} /></div>}
+        {activeTools.worldClock && <div id="nav-worldClock" className={`nav-item ${activeTab === 'worldClock' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('worldClock')} title={t(language as Lang, 'dlc_worldClock_name' as any)}><Globe size={20} /></div>}
         
         {(activeTools.stopwatch || activeTools.minitimer || activeTools.reminders || activeTools.calc || activeTools.tasks || activeTools.notes) && (activeTools.screenshot || activeTools.paint) && (
           <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px auto' }}></div>
@@ -299,6 +305,7 @@ function App() {
           {activeTab === 'formulas' && <Formulas />}
           {activeTab === 'integrals' && <Integrals />}
           {activeTab === 'converter' && <Converter />}
+          {activeTab === 'worldClock' && <WorldClock />}
           {activeTab === 'settings' && <Settings />}
         </div>
       )}

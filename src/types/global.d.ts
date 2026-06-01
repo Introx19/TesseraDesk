@@ -7,6 +7,7 @@ export interface ElectronAPI {
   setCompactMode: (isCompact: boolean) => void;
   openToolWindow: (tool: string) => void;
   showScreenshotMenu: (dataUrl: string, strings?: any) => void;
+  sendCroppedScreenshot: (dataUrl: string, multiMode: boolean) => void;
   onScreenshotData: (callback: (dataUrl: string) => void) => void;
   closePreviewWindow: () => void;
   selectFile: (filters: any[]) => Promise<string | null>;
