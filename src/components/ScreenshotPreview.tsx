@@ -127,6 +127,12 @@ export default function ScreenshotPreview() {
     }
 
     const mergedData = getMergedDataUrl();
+    if (!mergedData) {
+      setCropStart(null);
+      setCropEnd(null);
+      setMode('draw');
+      return;
+    }
     const img = new Image();
     img.src = mergedData;
     img.onload = () => {
@@ -179,11 +185,14 @@ export default function ScreenshotPreview() {
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     if (dataUrl && window.electronAPI) {
-      window.electronAPI.showScreenshotMenu(getMergedDataUrl(), {
-        saveAs: t(language as Lang, 'saveAs'),
-        copy: t(language as Lang, 'copy'),
-        openPaint: t(language as Lang, 'openPaint')
-      });
+      const merged = getMergedDataUrl();
+      if (merged) {
+        window.electronAPI.showScreenshotMenu(merged, {
+          saveAs: t(language as Lang, 'saveAs'),
+          copy: t(language as Lang, 'copy'),
+          openPaint: t(language as Lang, 'openPaint')
+        });
+      }
     }
   };
 

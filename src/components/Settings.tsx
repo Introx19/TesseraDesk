@@ -53,7 +53,8 @@ const Settings: React.FC = () => {
           desmos: activeTools.desmos, 
           formulas: activeTools.formulas,
           integrals: activeTools.integrals,
-          converter: activeTools.converter
+          converter: activeTools.converter,
+          worldClock: activeTools.worldClock
         }
       };
       updateSettings(defaultState);
