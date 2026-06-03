@@ -256,7 +256,7 @@ ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
   }
   
   newPreviewWindow.webContents.on('did-finish-load', () => {
-    newPreviewWindow?.webContents.send('screenshot-data', croppedDataUrl);
+    newPreviewWindow?.webContents.send('load-screenshot-data', croppedDataUrl);
     newPreviewWindow?.show();
   });
   
