@@ -39,6 +39,7 @@ const Settings: React.FC = () => {
         timerSound: 'bell',
         shortcuts: { 
           toggleApp: 'CommandOrControl+Shift+F', 
+          toggleShortcuts: 'CommandOrControl+Shift+S',
           openCalc: 'CommandOrControl+Space', 
           openStopwatch: 'CommandOrControl+Shift+T',
           openMinitimer: 'CommandOrControl+Shift+M',
@@ -66,7 +67,7 @@ const Settings: React.FC = () => {
 
   const resetHotkeys = async () => {
     if (await modal.confirm(t(language as Lang, 'confirmResetShortcuts'))) {
-      const defaultShortcuts = { toggleApp: '', openCalc: '', openStopwatch: '', openMinitimer: '', openReminders: '', openScreenshot: '' };
+      const defaultShortcuts = { toggleApp: '', toggleShortcuts: '', openCalc: '', openStopwatch: '', openMinitimer: '', openReminders: '', openScreenshot: '' };
       setLocalShortcuts(defaultShortcuts);
       updateSettings({ shortcuts: defaultShortcuts });
     }
