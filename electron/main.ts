@@ -114,11 +114,8 @@ ipcMain.on('set-always-on-top', (event, flag) => {
 
 ipcMain.on('window-close', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
-  if (win && win !== mainWindow && win !== previewWindow) {
+  if (win && win !== mainWindow && !previewWindows.includes(win)) {
     win.close(); 
-  } else if (previewWindow && win === previewWindow) {
-    win.close();
-    previewWindow = null;
   } else {
     mainWindow?.hide();
   }
@@ -126,8 +123,12 @@ ipcMain.on('window-close', (event) => {
 
 ipcMain.on('window-minimize', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) {
-    win.minimize();
+  if (win && !win.isDestroyed()) {
+    if (win.isMinimized()) {
+      win.restore();
+    } else {
+      win.minimize();
+    }
   }
 })
 
@@ -139,20 +140,13 @@ ipcMain.on('open-paint', (event, filePath) => {
   }
 });
 
-let previewWindow: BrowserWindow | null = null;
+let previewWindows: BrowserWindow[] = [];
 let selectWindow: BrowserWindow | null = null;
 
 ipcMain.on('close-preview-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      if (win === previewWindow || win === selectWindow) {
-        win.hide();
-        if (isAppCompact && (!previewWindow || previewWindow.isDestroyed() || !previewWindow.isVisible()) && (!selectWindow || selectWindow.isDestroyed() || !selectWindow.isVisible())) {
-          mainWindow?.show();
-        }
-      } else {
-        win.close();
-      }
+    if (win && !win.isDestroyed()) {
+      win.close();
     }
 });
 
@@ -212,7 +206,7 @@ async function takeScreenshot(multiMode: boolean = false) {
         if (!app.isQuiting) {
           e.preventDefault();
           selectWindow?.hide();
-          if (isAppCompact && (!previewWindow || previewWindow.isDestroyed() || !previewWindow.isVisible())) mainWindow?.show();
+          if (isAppCompact && previewWindows.length === 0) mainWindow?.show();
         }
       });
     } else {
@@ -235,44 +229,43 @@ app.on('before-quit', () => {
 ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
   if (selectWindow) selectWindow.hide();
   
-  if (!multiMode && previewWindow) previewWindow.hide();
-  
-  if (!previewWindow || previewWindow.isDestroyed()) {
-    previewWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
-      frame: false,
-      alwaysOnTop: true,
-      transparent: true,
-      show: false,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.mjs'),
-        contextIsolation: true,
-      }
+  if (!multiMode) {
+    previewWindows.forEach(win => {
+      if (!win.isDestroyed()) win.close();
     });
-    
-    if (process.env.VITE_DEV_SERVER_URL) {
-      previewWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/preview');
-    } else {
-      previewWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/preview' });
-    }
-
-    previewWindow.webContents.on('did-finish-load', () => {
-      previewWindow?.webContents.send('load-screenshot-data', croppedDataUrl);
-      previewWindow?.show();
-    });
-    
-    previewWindow.on('close', (e) => {
-      if (!app.isQuiting) {
-        e.preventDefault();
-        previewWindow?.hide();
-        if (isAppCompact && !selectWindow?.isVisible()) mainWindow?.show();
-      }
-    });
-  } else {
-    previewWindow.webContents.send('load-screenshot-data', croppedDataUrl);
-    previewWindow.show();
+    previewWindows = [];
   }
+  
+  const newPreviewWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      contextIsolation: true,
+    }
+  });
+    
+  if (process.env.VITE_DEV_SERVER_URL) {
+    newPreviewWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/preview');
+  } else {
+    newPreviewWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/screenshot-preview' });
+  }
+  
+  newPreviewWindow.webContents.on('did-finish-load', () => {
+    newPreviewWindow?.webContents.send('screenshot-data', croppedDataUrl);
+    newPreviewWindow?.show();
+  });
+  
+  newPreviewWindow.on('closed', () => {
+    previewWindows = previewWindows.filter(w => w !== newPreviewWindow);
+    if (isAppCompact && !selectWindow && previewWindows.length === 0) mainWindow?.show();
+  });
+
+  previewWindows.push(newPreviewWindow);
 });
 
 ipcMain.on('take-screenshot', (event, multiMode) => {
@@ -311,10 +304,9 @@ ipcMain.on('show-screenshot-menu', (event, dataUrl, strings) => {
         const buffer = Buffer.from(base64Data, 'base64');
         fs.writeFileSync(tempPath, buffer);
         exec(`mspaint "${tempPath}"`);
-        const win = BrowserWindow.fromWebContents(event.sender);
-        if (win) {
+        const win = previewWindows.length > 0 ? previewWindows[previewWindows.length - 1] : mainWindow;
+        if (win && win instanceof BrowserWindow) {
             win.close();
-            if (win === previewWindow) previewWindow = null;
         }
       }
     }
@@ -415,7 +407,7 @@ ipcMain.handle('select-file', async (event, filters) => {
 });
 
 let currentShortcuts: any = {};
-ipcMain.on('update-shortcuts', (event, shortcuts) => {
+ipcMain.on('update-shortcuts', (event, shortcuts, multiScreenshot) => {
   try {
     if (currentShortcuts.toggleApp) globalShortcut.unregister(currentShortcuts.toggleApp);
     if (currentShortcuts.openCalc) globalShortcut.unregister(currentShortcuts.openCalc);
@@ -442,7 +434,7 @@ ipcMain.on('update-shortcuts', (event, shortcuts) => {
       globalShortcut.register(shortcuts.openReminders, () => openToolWin('reminders'));
     }
     if (shortcuts.openScreenshot) {
-      globalShortcut.register(shortcuts.openScreenshot, () => takeScreenshot(false));
+      globalShortcut.register(shortcuts.openScreenshot, () => takeScreenshot(multiScreenshot || false));
     }
     currentShortcuts = shortcuts;
   } catch (e) {

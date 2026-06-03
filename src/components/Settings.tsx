@@ -129,12 +129,12 @@ const Settings: React.FC = () => {
       <h3 style={{marginBottom: '10px'}}>{t(language as Lang, 'appStyle' as any) || 'App Style'}</h3>
       <div style={{ marginBottom: '20px' }}>
         <select 
-          className="task-input" 
           value={appStyle} 
           onChange={(e) => updateSettings({ appStyle: e.target.value as any })}
+          className="task-input"
           style={{ width: '100%', maxWidth: '250px' }}
         >
-          <option value="glassmorphism">Glassmorphism (Default)</option>
+          <option value="glassmorphism">{t(language as Lang, 'glassmorphism') || 'Glassmorphism'}</option>
           <option value="neumorphism">Neumorphism</option>
         </select>
       </div>
@@ -562,7 +562,7 @@ const Settings: React.FC = () => {
           <div className="settings-section">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.6</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.6.1</div>
             </div>
             
             <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>

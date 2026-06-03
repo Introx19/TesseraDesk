@@ -344,20 +344,19 @@ export default function ScreenshotPreview() {
                     width: `calc(${cropRect.width} / ${canvasRef.current?.width || 1} * 100%)`,
                     height: `calc(${cropRect.height} / ${canvasRef.current?.height || 1} * 100%)`,
                  }}>
-                   {/* Sizes info */}
-                   <div style={{
-                      position: 'absolute',
-                      bottom: '-25px',
-                      right: 0,
-                      background: 'rgba(0,0,0,0.7)',
-                      color: 'white',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      whiteSpace: 'nowrap'
-                   }}>
-                      {Math.round(cropRect.width)} x {Math.round(cropRect.height)}
-                   </div>
+                    <div style={{
+                       position: 'absolute',
+                       bottom: '-25px',
+                       right: 0,
+                       background: 'rgba(0,0,0,0.7)',
+                       color: 'white',
+                       padding: '2px 6px',
+                       borderRadius: '4px',
+                       fontSize: '12px',
+                       whiteSpace: 'nowrap'
+                    }}>
+                       {Math.round(cropRect.width)} x {Math.round(cropRect.height)}
+                    </div>
                  </div>
                </div>
              )}

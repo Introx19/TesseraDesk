@@ -114,7 +114,7 @@ export default function Tasks() {
                   type="checkbox" 
                   checked={task.completed}
                   onChange={() => toggleTask(task.id)}
-                  style={{ cursor: 'pointer', width: '18px', height: '18px', accentColor: 'var(--accent)' }}
+                  style={{ cursor: 'pointer', width: '18px', height: '18px', accentColor: 'var(--accent)', outline: 'none' }}
                 />
                 <span style={{ 
                   flex: 1, 

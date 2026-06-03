@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   closePreviewWindow: () => ipcRenderer.send('close-preview-window'),
   selectFile: (filters: any[]) => ipcRenderer.invoke('select-file', filters),
-  updateShortcuts: (shortcuts: any) => ipcRenderer.send('update-shortcuts', shortcuts),
+  updateShortcuts: (shortcuts: any, multiScreenshot: boolean) => ipcRenderer.send('update-shortcuts', shortcuts, multiScreenshot),
   showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', title, body),
   setStartupMode: (runOnStartup: boolean) => ipcRenderer.send('set-startup-mode', runOnStartup),
   setMiniMode: (isMini: boolean) => ipcRenderer.send('set-mini-mode', isMini),

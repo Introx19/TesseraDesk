@@ -70,7 +70,7 @@ const defaultSettings: SettingsState = {
     openStopwatch: '',
     openMinitimer: '',
     openReminders: '',
-    openScreenshot: '',
+    openScreenshot: ''
   },
   activeTools: {
     stopwatch: true,
@@ -121,7 +121,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     if (window.electronAPI) {
       if (settings.globalShortcutsEnabled) {
-        window.electronAPI.updateShortcuts(settings.shortcuts);
+        window.electronAPI.updateShortcuts(settings.shortcuts, settings.multiScreenshot);
       } else {
         // Unregister all tool shortcuts, except the master toggles
         window.electronAPI.updateShortcuts({
@@ -132,7 +132,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           openMinitimer: '',
           openReminders: '',
           openScreenshot: ''
-        });
+        }, settings.multiScreenshot);
       }
       window.electronAPI.setStartupMode(settings.runAtStartup);
     }

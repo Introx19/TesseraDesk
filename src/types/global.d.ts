@@ -11,7 +11,7 @@ export interface ElectronAPI {
   onScreenshotData: (callback: (dataUrl: string) => void) => void;
   closePreviewWindow: () => void;
   selectFile: (filters: any[]) => Promise<string | null>;
-  updateShortcuts: (shortcuts: any) => void;
+  updateShortcuts: (shortcuts: any, multiScreenshot: boolean) => void;
   showNotification: (title: string, body: string) => void;
   setStartupMode: (runOnStartup: boolean) => void;
   setMiniMode: (isMini: boolean) => void;
