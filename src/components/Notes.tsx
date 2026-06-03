@@ -11,6 +11,13 @@ export default function Notes() {
   const modal = useModal();
   const editorRef = useRef<HTMLDivElement>(null);
   
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    strikeThrough: false,
+    insertUnorderedList: false
+  });
+  
   const [noteHTML, setNoteHTML] = useState(() => {
     // Migrate old plain text to HTML gracefully
     const oldHtml = localStorage.getItem('tesseradesk-note-html');
@@ -33,6 +40,21 @@ export default function Notes() {
     localStorage.setItem('tesseradesk-note-html', noteHTML);
   }, [noteHTML]);
 
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      if (document.activeElement === editorRef.current) {
+        setActiveFormats({
+          bold: document.queryCommandState('bold'),
+          italic: document.queryCommandState('italic'),
+          strikeThrough: document.queryCommandState('strikeThrough'),
+          insertUnorderedList: document.queryCommandState('insertUnorderedList')
+        });
+      }
+    };
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
   const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
     setNoteHTML(e.currentTarget.innerHTML);
   };
@@ -46,10 +68,11 @@ export default function Notes() {
     }
   };
 
-  const applyFormat = (command: string) => {
+  const applyFormat = (e: React.MouseEvent, command: string) => {
+    e.preventDefault(); // Prevent losing focus from the editor
     document.execCommand(command, false);
-    editorRef.current?.focus();
     if (editorRef.current) setNoteHTML(editorRef.current.innerHTML);
+    setActiveFormats(prev => ({ ...prev, [command]: document.queryCommandState(command) }));
   };
 
   const insertCheckbox = () => {
@@ -172,12 +195,12 @@ export default function Notes() {
       
       {!isXs && !isSm && (
         <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', padding: '5px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px' }}>
-          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('bold')} title="Bold"><Bold size={16} /></button>
-          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('italic')} title="Italic"><Italic size={16} /></button>
-          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('strikeThrough')} title="Strikethrough"><Strikethrough size={16} /></button>
+          <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.bold ? 'var(--accent)' : 'transparent', color: activeFormats.bold ? '#000' : 'var(--text-main)', border: activeFormats.bold ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'bold')} title="Bold"><Bold size={16} /></button>
+          <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.italic ? 'var(--accent)' : 'transparent', color: activeFormats.italic ? '#000' : 'var(--text-main)', border: activeFormats.italic ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'italic')} title="Italic"><Italic size={16} /></button>
+          <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.strikeThrough ? 'var(--accent)' : 'transparent', color: activeFormats.strikeThrough ? '#000' : 'var(--text-main)', border: activeFormats.strikeThrough ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'strikeThrough')} title="Strikethrough"><Strikethrough size={16} /></button>
           <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 5px' }}></div>
-          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={() => applyFormat('insertUnorderedList')} title="List"><List size={16} /></button>
-          <button className="action-btn outline" style={{ padding: '4px 8px' }} onClick={insertCheckbox} title="Checkbox"><CheckSquare size={16} /></button>
+          <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.insertUnorderedList ? 'var(--accent)' : 'transparent', color: activeFormats.insertUnorderedList ? '#000' : 'var(--text-main)', border: activeFormats.insertUnorderedList ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'insertUnorderedList')} title="List"><List size={16} /></button>
+          <button className="action-btn" style={{ padding: '4px 8px', border: '1px solid var(--glass-border)', background: 'transparent' }} onClick={insertCheckbox} title="Checkbox"><CheckSquare size={16} /></button>
         </div>
       )}
 

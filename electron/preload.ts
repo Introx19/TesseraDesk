@@ -20,4 +20,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setStartupMode: (runOnStartup: boolean) => ipcRenderer.send('set-startup-mode', runOnStartup),
   setMiniMode: (isMini: boolean) => ipcRenderer.send('set-mini-mode', isMini),
   checkUpdates: () => ipcRenderer.invoke('check-updates'),
+  onToggleGlobalShortcuts: (callback: () => void) => ipcRenderer.on('toggle-global-shortcuts', () => callback()),
 })

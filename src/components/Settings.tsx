@@ -5,7 +5,7 @@ import { t, type Lang } from '../i18n/texts';
 import { useModal } from '../contexts/ModalContext';
 
 const Settings: React.FC = () => {
-  const { theme, customAccent, volume, timerSound, shortcuts, activeTools, autoUpdate, updateSettings, pomodoroWork, pomodoroBreak, pomodoroEnabled, language, multiScreenshot } = useSettings();
+  const { theme, appStyle, globalShortcutsEnabled, customAccent, volume, timerSound, shortcuts, activeTools, autoUpdate, updateSettings, pomodoroWork, pomodoroBreak, pomodoroEnabled, language, multiScreenshot } = useSettings();
   const [activeTab, setActiveTab] = useState<'interface' | 'sound' | 'hotkeys' | 'tools' | 'dlc' | 'about'>('interface');
   const [localShortcuts, setLocalShortcuts] = useState(shortcuts);
   const modal = useModal();
@@ -31,6 +31,7 @@ const Settings: React.FC = () => {
     if (await modal.confirm(t(language as Lang, 'confirmResetSettings'))) {
       const defaultState = {
         theme: 'dark' as const,
+        appStyle: 'glassmorphism' as const,
         customAccent: null,
         customBg: null,
         runAtStartup: false,
@@ -44,6 +45,7 @@ const Settings: React.FC = () => {
           openReminders: 'CommandOrControl+Shift+R',
           openScreenshot: ''
         },
+        globalShortcutsEnabled: true,
         pomodoroWork: 25,
         pomodoroBreak: 5,
         dndMode: false,
@@ -117,10 +119,23 @@ const Settings: React.FC = () => {
   const renderInterface = () => (
     <div className="settings-section">
       <h3 style={{marginTop: 0, marginBottom: '10px'}}>{t(language as Lang, 'themePresets')}</h3>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
         <button className={`action-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => updateSettings({ theme: 'dark' })}>{t(language as Lang, 'dark')}</button>
         <button className={`action-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => updateSettings({ theme: 'light' })}>{t(language as Lang, 'light')}</button>
         <button className={`action-btn ${theme === 'soft' ? 'active' : ''}`} onClick={() => updateSettings({ theme: 'soft' })}>{t(language as Lang, 'soft')}</button>
+      </div>
+
+      <h3 style={{marginBottom: '10px'}}>{t(language as Lang, 'appStyle' as any) || 'App Style'}</h3>
+      <div style={{ marginBottom: '20px' }}>
+        <select 
+          className="task-input" 
+          value={appStyle} 
+          onChange={(e) => updateSettings({ appStyle: e.target.value as any })}
+          style={{ width: '100%', maxWidth: '250px' }}
+        >
+          <option value="glassmorphism">Glassmorphism (Default)</option>
+          <option value="neumorphism">Neumorphism</option>
+        </select>
       </div>
 
       <h3 style={{marginBottom: '10px'}}>{t(language as Lang, 'customColors')}</h3>
@@ -242,7 +257,20 @@ const Settings: React.FC = () => {
         {t(language as Lang, 'hotkeysInstructions2')}
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '20px', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+        <input 
+          type="checkbox" 
+          checked={globalShortcutsEnabled} 
+          onChange={(e) => updateSettings({ globalShortcutsEnabled: e.target.checked })}
+          style={{ accentColor: 'var(--accent)', width: '18px', height: '18px' }}
+        />
+        <div>
+          <div style={{ fontWeight: 500 }}>Enable Global Shortcuts (Game Mode)</div>
+          <div style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>Disable this when playing games to prevent shortcut conflicts. (The "Toggle App" shortcut will still work)</div>
+        </div>
+      </label>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', opacity: globalShortcutsEnabled ? 1 : 0.5, pointerEvents: globalShortcutsEnabled ? 'auto' : 'none' }}>
         <div className="shortcut-row">
           <label style={{ flex: 1 }}>{t(language as Lang, 'toggleAppShortcut')}</label>
           <input 
@@ -533,7 +561,7 @@ const Settings: React.FC = () => {
           <div className="settings-section">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.5</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.6</div>
             </div>
             
             <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>

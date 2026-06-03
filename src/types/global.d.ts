@@ -16,6 +16,7 @@ export interface ElectronAPI {
   setStartupMode: (runOnStartup: boolean) => void;
   setMiniMode: (isMini: boolean) => void;
   checkUpdates: () => Promise<{ status: 'dev' | 'available' | 'latest' | 'error', version?: string }>;
+  onToggleGlobalShortcuts?: (callback: () => void) => void;
 }
 
 declare global {

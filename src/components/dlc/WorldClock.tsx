@@ -3,8 +3,27 @@ import { Trash2, Plus, Clock as ClockIcon, Globe } from 'lucide-react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { t, type Lang } from '../../i18n/texts';
 import { useWindowSize } from '../../hooks/useWindowSize';
+import ct from 'countries-and-timezones';
 
 // Timezones will be generated dynamically using Intl API
+const cityTranslations: Record<string, string> = {
+  "New York": "Нью-Йорк",
+  "London": "Лондон",
+  "Paris": "Париж",
+  "Tokyo": "Токио",
+  "Moscow": "Москва",
+  "Berlin": "Берлин",
+  "Kyiv": "Киев",
+  "Kiev": "Киев",
+  "Minsk": "Минск",
+  "Toronto": "Торонто",
+  "Sydney": "Сидней",
+  "Dubai": "Дубай",
+  "Istanbul": "Стамбул",
+  "Los Angeles": "Лос-Анджелес",
+  "Chicago": "Чикаго",
+  // more can be added if needed
+};
 
 export default function WorldClock() {
   const { language } = useSettings();
@@ -33,6 +52,14 @@ export default function WorldClock() {
     const zones = Intl.supportedValuesOf('timeZone');
     const now = new Date();
     
+    // Initialize DisplayNames for localization
+    let regionNames: Intl.DisplayNames | null = null;
+    try {
+      regionNames = new Intl.DisplayNames([language === 'ru' ? 'ru' : 'en'], { type: 'region' });
+    } catch (e) {
+      // fallback
+    }
+    
     return zones.map(zone => {
       try {
         const formatter = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' });
@@ -48,16 +75,41 @@ export default function WorldClock() {
           offsetValue = hours * 60 + (hours < 0 ? -mins : mins);
         }
         
+        // Find country
+        let countryName = '';
+        let originalCityName = zone.split('/').pop()?.replace(/_/g, ' ') || '';
+        let cityName = originalCityName;
+        
+        if (language === 'ru' && cityTranslations[originalCityName]) {
+          cityName = cityTranslations[originalCityName];
+        }
+
+        const tzInfo = ct.getTimezone(zone);
+        if (tzInfo && tzInfo.countries.length > 0) {
+           const code = tzInfo.countries[0];
+           if (regionNames) {
+             try {
+               countryName = regionNames.of(code) || code;
+             } catch(e) {
+               countryName = code;
+             }
+           } else {
+             countryName = code;
+           }
+        } else {
+           countryName = zone.split('/')[0];
+        }
+
         return {
           id: zone,
-          label: `(${offsetString}) ${zone.replace(/_/g, ' ')}`,
+          label: `(${offsetString}) ${countryName} / ${cityName}`,
           offsetValue
         };
       } catch (e) {
         return { id: zone, label: zone, offsetValue: 0 };
       }
     }).sort((a, b) => a.offsetValue - b.offsetValue || a.label.localeCompare(b.label));
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     const timer = setInterval(() => {

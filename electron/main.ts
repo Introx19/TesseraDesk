@@ -144,9 +144,16 @@ let selectWindow: BrowserWindow | null = null;
 
 ipcMain.on('close-preview-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) win.close();
-    if (win === previewWindow) previewWindow = null;
-    if (win === selectWindow) selectWindow = null;
+    if (win) {
+      if (win === previewWindow || win === selectWindow) {
+        win.hide();
+        if (isAppCompact && (!previewWindow || previewWindow.isDestroyed() || !previewWindow.isVisible()) && (!selectWindow || selectWindow.isDestroyed() || !selectWindow.isVisible())) {
+          mainWindow?.show();
+        }
+      } else {
+        win.close();
+      }
+    }
 });
 
 async function takeScreenshot(multiMode: boolean = false) {
@@ -170,79 +177,102 @@ async function takeScreenshot(multiMode: boolean = false) {
     const primarySource = sources[0];
     const dataUrl = primarySource.thumbnail.toDataURL();
     
-    if (selectWindow) selectWindow.close();
-    
-    selectWindow = new BrowserWindow({
-      x: primaryDisplay.bounds.x,
-      y: primaryDisplay.bounds.y,
-      width: primaryDisplay.bounds.width,
-      height: primaryDisplay.bounds.height,
-      frame: false,
-      transparent: true,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      enableLargerThanScreen: true,
-      resizable: false,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.mjs'),
-        contextIsolation: true,
+    if (!selectWindow || selectWindow.isDestroyed()) {
+      selectWindow = new BrowserWindow({
+        x: primaryDisplay.bounds.x,
+        y: primaryDisplay.bounds.y,
+        width: primaryDisplay.bounds.width,
+        height: primaryDisplay.bounds.height,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        enableLargerThanScreen: true,
+        resizable: false,
+        show: false,
+        webPreferences: {
+          preload: path.join(__dirname, 'preload.mjs'),
+          contextIsolation: true,
+        }
+      });
+      selectWindow.setAlwaysOnTop(true, 'screen-saver');
+      if (process.env.VITE_DEV_SERVER_URL) {
+        selectWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/screenshot-select');
+      } else {
+        selectWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/screenshot-select' });
       }
-    });
-
-    selectWindow.setAlwaysOnTop(true, 'screen-saver');
-
-    if (process.env.VITE_DEV_SERVER_URL) {
-      selectWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/screenshot-select');
+      
+      selectWindow.webContents.on('did-finish-load', () => {
+        selectWindow?.webContents.send('load-screenshot-data', dataUrl);
+        selectWindow?.show();
+      });
+      
+      selectWindow.on('close', (e) => {
+        // Prevent default close, just hide
+        if (!app.isQuiting) {
+          e.preventDefault();
+          selectWindow?.hide();
+          if (isAppCompact && (!previewWindow || previewWindow.isDestroyed() || !previewWindow.isVisible())) mainWindow?.show();
+        }
+      });
     } else {
-      selectWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/screenshot-select' });
+      selectWindow.setBounds(primaryDisplay.bounds);
+      selectWindow.webContents.send('load-screenshot-data', dataUrl);
+      selectWindow.show();
     }
-
-    selectWindow.webContents.on('did-finish-load', () => {
-      selectWindow?.webContents.send('load-screenshot-data', dataUrl);
-    });
-    
-    selectWindow.on('closed', () => {
-      selectWindow = null;
-      if (isAppCompact && !previewWindow) mainWindow?.show();
-    });
-
   } catch (err) {
     console.error('Screenshot failed:', err);
     if (isAppCompact) mainWindow?.show();
   }
 }
 
-ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
-  if (selectWindow) selectWindow.close();
-  
-  if (!multiMode && previewWindow) previewWindow.close();
-  
-  previewWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    frame: false,
-    alwaysOnTop: true,
-    transparent: true,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
-      contextIsolation: true,
-    }
-  });
-  
-  if (process.env.VITE_DEV_SERVER_URL) {
-    previewWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/preview');
-  } else {
-    previewWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/preview' });
-  }
+// Ensure windows actually close when app quits
+app.on('before-quit', () => {
+  // @ts-ignore
+  app.isQuiting = true;
+});
 
-  previewWindow.webContents.on('did-finish-load', () => {
-    previewWindow?.webContents.send('load-screenshot-data', croppedDataUrl);
-  });
+ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
+  if (selectWindow) selectWindow.hide();
   
-  previewWindow.on('closed', () => {
-    previewWindow = null;
-    if (isAppCompact && !selectWindow) mainWindow?.show();
-  });
+  if (!multiMode && previewWindow) previewWindow.hide();
+  
+  if (!previewWindow || previewWindow.isDestroyed()) {
+    previewWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      frame: false,
+      alwaysOnTop: true,
+      transparent: true,
+      show: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.mjs'),
+        contextIsolation: true,
+      }
+    });
+    
+    if (process.env.VITE_DEV_SERVER_URL) {
+      previewWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '#/preview');
+    } else {
+      previewWindow.loadFile(path.join(process.env.DIST as string, 'index.html'), { hash: '/preview' });
+    }
+
+    previewWindow.webContents.on('did-finish-load', () => {
+      previewWindow?.webContents.send('load-screenshot-data', croppedDataUrl);
+      previewWindow?.show();
+    });
+    
+    previewWindow.on('close', (e) => {
+      if (!app.isQuiting) {
+        e.preventDefault();
+        previewWindow?.hide();
+        if (isAppCompact && !selectWindow?.isVisible()) mainWindow?.show();
+      }
+    });
+  } else {
+    previewWindow.webContents.send('load-screenshot-data', croppedDataUrl);
+    previewWindow.show();
+  }
 });
 
 ipcMain.on('take-screenshot', (event, multiMode) => {

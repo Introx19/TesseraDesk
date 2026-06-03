@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Minus, Trash2, Crop, Check, EyeOff, Eye, Eraser } from 'lucide-react';
+import { X, Minus, Trash2, Crop, Check, EyeOff, Eye, Eraser, Type, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
+import Tesseract from 'tesseract.js';
 import { useSettings } from '../contexts/SettingsContext';
 import { t, type Lang } from '../i18n/texts';
 
@@ -8,11 +9,13 @@ export default function ScreenshotPreview() {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   
   // Drawing & Mode state
-  const [mode, setMode] = useState<'draw' | 'crop'>('draw');
+  const [mode, setMode] = useState<'draw' | 'crop' | 'ocr'>('draw');
+  const [scale, setScale] = useState(1);
   const [showToolbar, setShowToolbar] = useState(true);
   const [color, setColor] = useState('#ff3333');
   const [isEraser, setIsEraser] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isOcrRunning, setIsOcrRunning] = useState(false);
   
   const [cropStart, setCropStart] = useState<{x: number, y: number} | null>(null);
   const [cropEnd, setCropEnd] = useState<{x: number, y: number} | null>(null);
@@ -65,8 +68,8 @@ export default function ScreenshotPreview() {
     const scaleY = canvas.height / rect.height;
 
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      x: Math.max(0, Math.min((clientX - rect.left) * scaleX, canvas.width)),
+      y: Math.max(0, Math.min((clientY - rect.top) * scaleY, canvas.height))
     };
   };
 
@@ -75,7 +78,7 @@ export default function ScreenshotPreview() {
     const coords = getCoords(e);
     if (mode === 'draw') {
       lastPos.current = coords;
-    } else if (mode === 'crop') {
+    } else if (mode === 'crop' || mode === 'ocr') {
       setCropStart(coords);
       setCropEnd(coords);
     }
@@ -99,7 +102,8 @@ export default function ScreenshotPreview() {
       ctx.globalCompositeOperation = 'source-over'; // reset
       
       lastPos.current = currentPos;
-    } else if (mode === 'crop') {
+      lastPos.current = currentPos;
+    } else if (mode === 'crop' || mode === 'ocr') {
       setCropEnd(currentPos);
     }
   };
@@ -107,6 +111,27 @@ export default function ScreenshotPreview() {
   const stopInteraction = () => {
     setIsDrawing(false);
   };
+  
+  // Listen to global mouse events to support dragging outside the canvas
+  useEffect(() => {
+    if (!isDrawing) return;
+    const handleGlobalMouseMove = (e: MouseEvent | TouchEvent) => {
+      processInteraction(e as any);
+    };
+    const handleGlobalMouseUp = () => {
+      stopInteraction();
+    };
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('touchmove', handleGlobalMouseMove);
+    window.addEventListener('touchend', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('touchmove', handleGlobalMouseMove);
+      window.removeEventListener('touchend', handleGlobalMouseUp);
+    };
+  }, [isDrawing, mode, color, isEraser]); // Include dependencies used in processInteraction
   
   const applyCrop = () => {
     if (!cropStart || !cropEnd || !canvasRef.current || !dataUrl) {
@@ -182,6 +207,58 @@ export default function ScreenshotPreview() {
     return dataUrl;
   };
 
+  const runOcr = async () => {
+    let mergedData = getMergedDataUrl();
+    if (!mergedData) return;
+    
+    // If we have an OCR crop area, crop the image before OCR
+    if (mode === 'ocr' && cropStart && cropEnd && canvasRef.current) {
+      const x = Math.min(cropStart.x, cropEnd.x);
+      const y = Math.min(cropStart.y, cropEnd.y);
+      const w = Math.abs(cropEnd.x - cropStart.x);
+      const h = Math.abs(cropEnd.y - cropStart.y);
+      if (w >= 10 && h >= 10) {
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = w;
+        cropCanvas.height = h;
+        const ctx = cropCanvas.getContext('2d');
+        if (ctx) {
+           const img = new Image();
+           img.src = mergedData;
+           await new Promise(resolve => { img.onload = resolve; });
+           ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+           mergedData = cropCanvas.toDataURL('image/png');
+        }
+      }
+    }
+
+    setIsOcrRunning(true);
+    try {
+      const result = await Tesseract.recognize(mergedData, 'eng+rus+ukr');
+      
+      // Clean up text: keep only letters, numbers, punctuation, spaces, and newlines.
+      // This removes emojis and weird symbols.
+      const cleanedText = result.data.text
+        .replace(/[^\p{L}\p{N}\p{P}\p{Z}\n]/gu, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+        
+      navigator.clipboard.writeText(cleanedText);
+      if (window.electronAPI) {
+        window.electronAPI.showNotification('OCR', t(language as Lang, 'ocrSuccess') || 'Text copied to clipboard!');
+      }
+    } catch (err) {
+      console.error(err);
+      if (window.electronAPI) {
+        window.electronAPI.showNotification('OCR Error', t(language as Lang, 'ocrError') || 'Failed to recognize text.');
+      }
+    }
+    setIsOcrRunning(false);
+    setCropStart(null);
+    setCropEnd(null);
+    setMode('draw');
+  };
+
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     if (dataUrl && window.electronAPI) {
@@ -231,24 +308,25 @@ export default function ScreenshotPreview() {
          style={{ flex: 1, padding: showToolbar ? '30px 20px 60px 20px' : '30px 20px 20px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transition: 'padding 0.3s' }}
          onContextMenu={handleContextMenu}
          title={t(language as Lang, 'screenshotPreviewHint')}
+         onWheel={(e) => {
+           if (e.ctrlKey) {
+             e.preventDefault();
+             setScale(prev => Math.min(Math.max(0.2, prev - e.deltaY * 0.002), 5));
+           }
+         }}
       >
         {dataUrl ? (
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', maxWidth: '100%', maxHeight: '100%', boxShadow: '0 5px 15px rgba(0,0,0,0.5)', borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', maxWidth: '100%', maxHeight: '100%', boxShadow: '0 5px 15px rgba(0,0,0,0.5)', borderRadius: '8px', overflow: 'hidden', transform: `scale(${scale})`, transformOrigin: 'center', transition: 'transform 0.1s' }}>
              <img ref={imgRef} src={dataUrl} style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt="Screenshot" draggable={false} />
              <canvas 
                 ref={canvasRef}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: mode === 'crop' ? 'crosshair' : 'crosshair', touchAction: 'none' }}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: mode !== 'draw' ? 'crosshair' : 'crosshair', touchAction: 'none' }}
                 onMouseDown={startInteraction}
-                onMouseMove={processInteraction}
-                onMouseUp={stopInteraction}
-                onMouseOut={stopInteraction}
                 onTouchStart={startInteraction}
-                onTouchMove={processInteraction}
-                onTouchEnd={stopInteraction}
              />
              
-             {/* Crop Overlay */}
-             {mode === 'crop' && cropRect && (
+             {/* Crop/OCR Overlay */}
+             {(mode === 'crop' || mode === 'ocr') && cropRect && (
                <div style={{
                  position: 'absolute',
                  left: 0, top: 0, right: 0, bottom: 0,
@@ -257,8 +335,8 @@ export default function ScreenshotPreview() {
                  {/* CSS pixels conversion: we need to scale canvas pixels back to CSS pixels */}
                  <div style={{
                     position: 'absolute',
-                    border: '2px dashed #00a8ff',
-                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    border: mode === 'ocr' ? '2px dashed #ff9900' : '2px dashed #00a8ff',
+                    backgroundColor: mode === 'ocr' ? 'rgba(255, 153, 0, 0.2)' : 'rgba(0,0,0,0.2)',
                     boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
                     // We must scale back based on canvas actual vs displayed size
                     left: `calc(${cropRect.left} / ${canvasRef.current?.width || 1} * 100%)`,
@@ -362,18 +440,44 @@ export default function ScreenshotPreview() {
                  >
                    <Crop size={16} />
                  </button>
+                 <button 
+                   className="win-btn" 
+                   onClick={() => setMode('ocr')} 
+                   title={language === 'ru' ? "Распознать текст (OCR)" : "Recognize text (OCR)"}
+                   style={{ padding: '4px 8px', color: 'var(--text-main)', opacity: isOcrRunning ? 0.5 : 1, pointerEvents: isOcrRunning ? 'none' : 'auto' }}
+                 >
+                   {isOcrRunning ? <Loader2 size={16} className="spinner" /> : <Type size={16} />}
+                 </button>
+                 <div style={{ width: '1px', height: '16px', background: 'var(--glass-border)', margin: '0 2px' }} />
+                 <button className="win-btn" onClick={() => setScale(s => Math.min(5, s + 0.2))} style={{ padding: '4px 8px' }} title="Zoom In"><ZoomIn size={16} /></button>
+                 <button className="win-btn" onClick={() => setScale(s => Math.max(0.2, s - 0.2))} style={{ padding: '4px 8px' }} title="Zoom Out"><ZoomOut size={16} /></button>
                </>
              ) : (
                <>
-                 <span style={{ fontSize: '12px', opacity: 0.8, marginRight: '5px' }}>Выделите область</span>
-                 <button 
-                   className="win-btn" 
-                   onClick={applyCrop} 
-                   title="Применить обрезку" 
-                   style={{ padding: '4px 8px', color: '#33ff33' }}
-                 >
-                   <Check size={16} />
-                 </button>
+                 <span style={{ fontSize: '12px', opacity: 0.8, marginRight: '5px' }}>
+                   {mode === 'ocr' ? (language === 'ru' ? 'Выделите текст для OCR' : 'Select text for OCR') : (language === 'ru' ? 'Выделите область' : 'Select region')}
+                 </span>
+                 {mode === 'ocr' && (!cropRect || cropRect.width === 0) && (
+                   <button 
+                     className="win-btn" 
+                     onClick={runOcr} 
+                     title={language === 'ru' ? "Сканировать весь экран" : "Scan full image"} 
+                     style={{ padding: '4px 8px', color: '#ff9900' }}
+                   >
+                     {isOcrRunning ? <Loader2 size={16} className="spinner" /> : <Type size={16} />}
+                     <span style={{ marginLeft: '5px', fontSize: '12px' }}>{language === 'ru' ? "Весь экран" : "Full Screen"}</span>
+                   </button>
+                 )}
+                 {(mode !== 'ocr' || (cropRect && cropRect.width > 0)) && (
+                   <button 
+                     className="win-btn" 
+                     onClick={mode === 'ocr' ? runOcr : applyCrop} 
+                     title={mode === 'ocr' ? "Распознать" : "Применить обрезку"} 
+                     style={{ padding: '4px 8px', color: mode === 'ocr' ? '#ff9900' : '#33ff33' }}
+                   >
+                     {mode === 'ocr' && isOcrRunning ? <Loader2 size={16} className="spinner" /> : <Check size={16} />}
+                   </button>
+                 )}
                  <button 
                    className="win-btn" 
                    onClick={cancelCrop} 

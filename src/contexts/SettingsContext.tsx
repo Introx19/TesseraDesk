@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Theme = 'dark' | 'light' | 'soft';
+export type AppStyle = 'glassmorphism' | 'neo-brutalism' | 'minimalist-monochrome' | 'material-design' | 'flat-design' | 'neumorphism' | 'cyberpunk';
 
 export interface SettingsState {
   theme: Theme;
+  appStyle: AppStyle;
   language: 'ru' | 'en';
   customAccent: string | null;
   runAtStartup: boolean;
@@ -16,8 +18,10 @@ export interface SettingsState {
   dndMode: boolean;
   autoUpdate: boolean;
   multiScreenshot: boolean;
+  globalShortcutsEnabled: boolean;
   shortcuts: {
     toggleApp: string;
+    toggleShortcuts: string;
     openCalc: string;
     openStopwatch: string;
     openMinitimer: string;
@@ -45,6 +49,7 @@ export interface SettingsState {
 
 const defaultSettings: SettingsState = {
   theme: 'dark',
+  appStyle: 'glassmorphism',
   language: 'ru',
   customAccent: null,
   runAtStartup: false,
@@ -57,8 +62,10 @@ const defaultSettings: SettingsState = {
   dndMode: false,
   autoUpdate: true,
   multiScreenshot: false,
+  globalShortcutsEnabled: true,
   shortcuts: {
     toggleApp: '',
+    toggleShortcuts: '',
     openCalc: '',
     openStopwatch: '',
     openMinitimer: '',
@@ -113,13 +120,27 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('tesseradesk-settings', JSON.stringify(settings));
     
     if (window.electronAPI) {
-      window.electronAPI.updateShortcuts(settings.shortcuts);
+      if (settings.globalShortcutsEnabled) {
+        window.electronAPI.updateShortcuts(settings.shortcuts);
+      } else {
+        // Unregister all tool shortcuts, except the master toggles
+        window.electronAPI.updateShortcuts({
+          toggleApp: settings.shortcuts.toggleApp,
+          toggleShortcuts: settings.shortcuts.toggleShortcuts,
+          openCalc: '',
+          openStopwatch: '',
+          openMinitimer: '',
+          openReminders: '',
+          openScreenshot: ''
+        });
+      }
       window.electronAPI.setStartupMode(settings.runAtStartup);
     }
     
-    // Apply theme
+    // Apply theme and style
     const root = document.documentElement;
     root.setAttribute('data-theme', settings.theme);
+    root.setAttribute('data-style', settings.appStyle);
     
     if (settings.customAccent) {
       root.style.setProperty('--accent', settings.customAccent);
@@ -132,6 +153,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Set opacity
     root.style.setProperty('--bg-opacity', settings.bgOpacity.toString());
   }, [settings]);
+
+  useEffect(() => {
+    if (window.electronAPI) {
+      window.electronAPI.onToggleGlobalShortcuts?.(() => {
+        setSettings(prev => ({ ...prev, globalShortcutsEnabled: !prev.globalShortcutsEnabled }));
+      });
+    }
+  }, []);
 
   const updateSettings = (newSettings: Partial<SettingsState>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));

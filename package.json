@@ -2,7 +2,7 @@
   "name": "tesseradesk",
   "private": true,
   "main": "dist-electron/main.js",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Professional desktop utility suite with productivity tools, scientific modules, and smart screen capture.",
   "type": "module",
   "scripts": {
@@ -13,12 +13,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "countries-and-timezones": "^3.9.0",
     "electron-updater": "^6.8.3",
     "lucide-react": "^1.7.0",
     "mathjs": "^15.1.1",
     "nerdamer": "^1.1.13",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

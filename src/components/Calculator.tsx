@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { evaluate } from 'mathjs';
 import { useWindowSize } from '../hooks/useWindowSize';
-import { Settings2 } from 'lucide-react';
+import { Settings2, History } from 'lucide-react';
 import { t, type Lang } from '../i18n/texts';
 import { useSettings } from '../contexts/SettingsContext';
 
@@ -10,10 +10,18 @@ export default function Calculator() {
   const { language } = useSettings();
   const [display, setDisplay] = useState('0');
   const [isScientific, setIsScientific] = useState(() => localStorage.getItem('calc-mode') === 'sci');
+  const [history, setHistory] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('calc-history') || '[]'); } catch { return []; }
+  });
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('calc-mode', isScientific ? 'sci' : 'std');
   }, [isScientific]);
+
+  useEffect(() => {
+    localStorage.setItem('calc-history', JSON.stringify(history));
+  }, [history]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +60,10 @@ export default function Calculator() {
       expr = expr.replace(/c/g, '(299792458)');
 
       const result = String(evaluate(expr));
+      setHistory(prev => {
+        const newHist = [`${display} = ${result}`, ...prev].slice(0, 10);
+        return newHist;
+      });
       setDisplay(result);
     } catch {
       setDisplay('Error');
@@ -125,6 +137,14 @@ export default function Calculator() {
           <h2>{t(language as Lang, 'calc')}</h2>
           <div style={{ display: 'flex', gap: '5px' }}>
             <button 
+              className={`btn ${showHistory ? 'btn-primary' : ''}`}
+              title={language === 'ru' ? 'История' : 'History'}
+              onClick={() => setShowHistory(!showHistory)}
+              style={{ padding: '6px' }}
+            >
+              <History size={16} />
+            </button>
+            <button 
               className={`btn ${isScientific ? 'btn-primary' : ''}`}
               title={t(language as Lang, 'scientificMode')}
               onClick={() => setIsScientific(!isScientific)}
@@ -168,8 +188,21 @@ export default function Calculator() {
         />
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', flex: 1 }}>
-        {/* Scientific panel */}
+      {showHistory ? (
+        <div className="custom-scrollbar" style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '8px', padding: '10px', overflowY: 'auto' }}>
+          {history.length === 0 && <div style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '20px' }}>{language === 'ru' ? 'История пуста' : 'History is empty'}</div>}
+          {history.map((item, i) => (
+            <div key={i} style={{ padding: '8px 5px', borderBottom: '1px solid var(--glass-border)', cursor: 'pointer', display: 'flex', justifyContent: 'flex-end', fontFamily: 'monospace', fontSize: '1.1em' }} onClick={() => {
+              setDisplay(item.split(' = ')[1]);
+              setShowHistory(false);
+            }}>
+              {item}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '10px', flex: 1 }}>
+          {/* Scientific panel */}
         {isScientific && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: isSm ? '4px' : '8px', flex: 1 }}>
             {[
@@ -232,7 +265,8 @@ export default function Calculator() {
             }}>{btn}</button>
           ))}
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

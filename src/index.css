@@ -489,3 +489,174 @@ select.task-input option {
   background: var(--bg-card) !important;
   box-shadow: 0 0 15px var(--accent-glow) !important;
 }
+/* App Styles overrides */
+/* Neo-Brutalism */
+:root[data-style="neo-brutalism"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-main);
+  border: 4px solid var(--text-main);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 var(--text-main);
+}
+:root[data-style="neo-brutalism"] .btn,
+:root[data-style="neo-brutalism"] .action-btn,
+:root[data-style="neo-brutalism"] .nav-item,
+:root[data-style="neo-brutalism"] .task-input {
+  border: 2px solid var(--text-main);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 var(--text-main);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+:root[data-style="neo-brutalism"] .btn:active,
+:root[data-style="neo-brutalism"] .action-btn:active,
+:root[data-style="neo-brutalism"] .nav-item:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--text-main);
+}
+:root[data-style="neo-brutalism"] .sidebar {
+  border-right: 4px solid var(--text-main);
+}
+:root[data-style="neo-brutalism"] .settings-container,
+:root[data-style="neo-brutalism"] .settings-sidebar {
+  border: 2px solid var(--text-main);
+  border-radius: 0;
+}
+
+/* Minimalist Monochrome */
+:root[data-style="minimalist-monochrome"] {
+  --accent: var(--text-main) !important;
+  --accent-hover: var(--text-secondary) !important;
+  --accent-glow: transparent !important;
+  filter: grayscale(100%);
+}
+:root[data-style="minimalist-monochrome"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-main);
+  border: 1px solid var(--text-secondary);
+  border-radius: 0;
+}
+:root[data-style="minimalist-monochrome"] .btn,
+:root[data-style="minimalist-monochrome"] .action-btn,
+:root[data-style="minimalist-monochrome"] .nav-item,
+:root[data-style="minimalist-monochrome"] .task-input {
+  border-radius: 0;
+}
+
+/* Material Design */
+:root[data-style="material-design"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-main);
+  border-radius: 8px;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+:root[data-style="material-design"] .btn,
+:root[data-style="material-design"] .action-btn {
+  border-radius: 4px;
+  border: none;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  text-transform: uppercase;
+  font-weight: bold;
+}
+:root[data-style="material-design"] .btn:active,
+:root[data-style="material-design"] .action-btn:active {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+/* Flat Design */
+:root[data-style="flat-design"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-main);
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+}
+:root[data-style="flat-design"] .btn,
+:root[data-style="flat-design"] .action-btn,
+:root[data-style="flat-design"] .nav-item,
+:root[data-style="flat-design"] .task-input {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+:root[data-style="flat-design"] .sidebar {
+  border-right: none;
+}
+
+/* Neumorphism */
+:root[data-style="neumorphism"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-main);
+  border-radius: 20px;
+}
+:root[data-style="neumorphism"] .btn,
+:root[data-style="neumorphism"] .action-btn,
+:root[data-style="neumorphism"] .nav-item,
+:root[data-style="neumorphism"] .task-input {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 5px 5px 10px rgba(0,0,0,0.2), -5px -5px 10px rgba(255,255,255,0.05);
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+:root[data-style="neumorphism"][data-theme="light"] .btn,
+:root[data-style="neumorphism"][data-theme="light"] .action-btn,
+:root[data-style="neumorphism"][data-theme="light"] .nav-item,
+:root[data-style="neumorphism"][data-theme="light"] .task-input {
+  box-shadow: 5px 5px 10px rgba(0,0,0,0.1), -5px -5px 10px rgba(255,255,255,0.8);
+}
+:root[data-style="neumorphism"] .btn:active,
+:root[data-style="neumorphism"] .btn.active,
+:root[data-style="neumorphism"] .action-btn:active,
+:root[data-style="neumorphism"] .action-btn.active,
+:root[data-style="neumorphism"] .nav-item.active {
+  box-shadow: inset 5px 5px 10px rgba(0,0,0,0.2), inset -5px -5px 10px rgba(255,255,255,0.05);
+  color: var(--accent);
+}
+:root[data-style="neumorphism"][data-theme="light"] .btn:active,
+:root[data-style="neumorphism"][data-theme="light"] .btn.active,
+:root[data-style="neumorphism"][data-theme="light"] .action-btn:active,
+:root[data-style="neumorphism"][data-theme="light"] .action-btn.active,
+:root[data-style="neumorphism"][data-theme="light"] .nav-item.active {
+  box-shadow: inset 5px 5px 10px rgba(0,0,0,0.1), inset -5px -5px 10px rgba(255,255,255,0.8);
+  color: var(--accent);
+}
+
+/* Cyberpunk */
+:root[data-style="cyberpunk"] {
+  --accent: #0ff !important;
+  --bg-main: #000 !important;
+  font-family: 'Courier New', Courier, monospace;
+}
+:root[data-style="cyberpunk"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #0ff;
+  border-radius: 0;
+  box-shadow: inset 0 0 20px rgba(0,255,255,0.2), 0 0 20px rgba(0,255,255,0.2);
+}
+:root[data-style="cyberpunk"] .btn,
+:root[data-style="cyberpunk"] .action-btn,
+:root[data-style="cyberpunk"] .nav-item {
+  border-radius: 0;
+  border: 1px solid #0ff;
+  background: rgba(0, 255, 255, 0.1);
+  color: #0ff;
+  text-shadow: 0 0 5px #0ff;
+}
+:root[data-style="cyberpunk"] .btn:hover,
+:root[data-style="cyberpunk"] .action-btn:hover,
+:root[data-style="cyberpunk"] .nav-item:hover,
+:root[data-style="cyberpunk"] .nav-item.active {
+  background: #0ff;
+  color: #000;
+  box-shadow: 0 0 15px #0ff;
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spinner { animation: spin 1s linear infinite; }
+

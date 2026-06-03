@@ -3,6 +3,51 @@ import elementsData from './elements.json';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useSettings } from '../../contexts/SettingsContext';
 import { t, type Lang } from '../../i18n/texts';
+import { elementNamesRu } from './elementTranslations';
+
+const categoryRu: Record<string, string> = {
+  'noble gas': 'Благородный газ',
+  'alkali metal': 'Щелочной металл',
+  'alkaline earth metal': 'Щелочноземельный металл',
+  'transition metal': 'Переходный металл',
+  'post-transition metal': 'Постпереходный металл',
+  'metalloid': 'Металлоид',
+  'nonmetal': 'Неметтал',
+  'diatomic nonmetal': 'Двухатомный неметалл',
+  'polyatomic nonmetal': 'Многоатомный неметалл',
+  'halogen': 'Галоген',
+  'lanthanide': 'Лантаноид',
+  'actinide': 'Актиноид'
+};
+
+const translatePhase = (phase: string, lang: string) => {
+  if (lang !== 'ru') return phase;
+  if (!phase) return phase;
+  const p = phase.toLowerCase();
+  if (p.includes('solid')) return phase.replace(/Solid/i, 'Твердое');
+  if (p.includes('liquid')) return phase.replace(/Liquid/i, 'Жидкость');
+  if (p.includes('gas')) return phase.replace(/Gas/i, 'Газ');
+  if (p.includes('expected')) return phase.replace(/Expected to be/i, 'Ожидается');
+  return phase;
+};
+
+const shortenEConfig = (config: string) => {
+  if (!config) return config;
+  const nobleGases = [
+    { sym: 'Rn', config: '1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p6 6s2 4f14 5d10 6p6' },
+    { sym: 'Xe', config: '1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6 5s2 4d10 5p6' },
+    { sym: 'Kr', config: '1s2 2s2 2p6 3s2 3p6 4s2 3d10 4p6' },
+    { sym: 'Ar', config: '1s2 2s2 2p6 3s2 3p6' },
+    { sym: 'Ne', config: '1s2 2s2 2p6' },
+    { sym: 'He', config: '1s2' }
+  ];
+  for (const gas of nobleGases) {
+    if (config.startsWith(gas.config) && config !== gas.config) {
+      return `[${gas.sym}] ` + config.substring(gas.config.length).trim();
+    }
+  }
+  return config;
+};
 
 export default function PeriodicTable() {
   const { isSm } = useWindowSize();
@@ -51,74 +96,77 @@ export default function PeriodicTable() {
                   <span style={{ fontSize: '2em', fontWeight: 'bold' }}>{selected.sym}</span>
                 </div>
                 <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <h2 style={{ margin: '0 0 5px 0', fontSize: '1.5em', color: 'var(--text-main)' }}>{selected.name}</h2>
+                  <h2 style={{ margin: '0 0 5px 0', fontSize: '1.5em', color: 'var(--text-main)' }}>
+                    {language === 'ru' ? elementNamesRu[selected.num] || selected.name : selected.name}
+                  </h2>
+                  {language === 'ru' && <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '5px' }}>{selected.name}</div>}
                   <div style={{ fontSize: '0.95em', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                    {selected.cat}
+                    {language === 'ru' ? (categoryRu[selected.cat] || selected.cat) : selected.cat}
                   </div>
                 </div>
               </div>
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '50vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Atomic Mass</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Атомная масса' : 'Atomic Mass'}</span>
                   <span style={{ fontWeight: 'bold' }}>{typeof selected.mass === 'number' ? selected.mass.toFixed(4) : selected.mass} u</span>
                 </div>
                 {selected.phase && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Standard State</span>
-                    <span style={{ fontWeight: 'bold' }}>{selected.phase}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Агрегатное состояние' : 'Standard State'}</span>
+                    <span style={{ fontWeight: 'bold' }}>{translatePhase(selected.phase, language)}</span>
                   </div>
                 )}
                 {selected.econfig && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Electron Configuration</span>
-                    <span style={{ fontWeight: 'bold' }}>{selected.econfig}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Электронная конфигурация' : 'Electron Configuration'}</span>
+                    <span style={{ fontWeight: 'bold' }}>{shortenEConfig(selected.econfig)}</span>
                   </div>
                 )}
                 {selected.electro && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Electronegativity (Pauling)</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Электроотрицательность (по Полингу)' : 'Electronegativity (Pauling)'}</span>
                     <span style={{ fontWeight: 'bold' }}>{selected.electro}</span>
                   </div>
                 )}
                 {selected.ion && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Ionization Energy</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Энергия ионизации' : 'Ionization Energy'}</span>
                     <span style={{ fontWeight: 'bold' }}>{selected.ion} eV</span>
                   </div>
                 )}
                 {selected.affinity !== undefined && selected.affinity !== null && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Electron Affinity</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Сродство к электрону' : 'Electron Affinity'}</span>
                     <span style={{ fontWeight: 'bold' }}>{selected.affinity} eV</span>
                   </div>
                 )}
                 {selected.melt && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Melting Point</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Температура плавления' : 'Melting Point'}</span>
                     <span style={{ fontWeight: 'bold' }}>{selected.melt} K</span>
                   </div>
                 )}
                 {selected.boil && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Boiling Point</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Температура кипения' : 'Boiling Point'}</span>
                     <span style={{ fontWeight: 'bold' }}>{selected.boil} K</span>
                   </div>
                 )}
                 {selected.density && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Density</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Плотность' : 'Density'}</span>
                     <span style={{ fontWeight: 'bold' }}>{selected.density} g/cm³</span>
                   </div>
                 )}
                 {selected.discoverer && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Discovered By</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? 'Открыватель' : 'Discovered By'}</span>
                     <span style={{ fontWeight: 'bold', textAlign: 'right', maxWidth: '200px' }}>{selected.discoverer}</span>
                   </div>
                 )}
               </div>
               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 20px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn" onClick={() => setSelected(null)}>Закрыть</button>
+                <button className="btn" onClick={() => setSelected(null)}>{language === 'ru' ? 'Закрыть' : 'Close'}</button>
               </div>
             </div>
           </div>
@@ -179,6 +227,27 @@ export default function PeriodicTable() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '10px 20px', background: 'rgba(0,0,0,0.1)', borderTop: '1px solid var(--glass-border)', fontSize: '0.8em' }}>
+          {Object.entries({
+            'alkali metal': 'rgba(244, 67, 54, 0.6)',
+            'alkaline earth metal': 'rgba(255, 152, 0, 0.6)',
+            'transition metal': 'rgba(63, 81, 181, 0.6)',
+            'post-transition metal': 'rgba(0, 150, 136, 0.6)',
+            'metalloid': 'rgba(76, 175, 80, 0.6)',
+            'nonmetal': 'rgba(33, 150, 243, 0.6)',
+            'halogen': 'rgba(0, 188, 212, 0.6)',
+            'noble gas': 'rgba(156, 39, 176, 0.6)',
+            'lanthanide': 'rgba(121, 85, 72, 0.6)',
+            'actinide': 'rgba(96, 125, 139, 0.6)'
+          }).map(([key, color]) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '12px', height: '12px', background: color, borderRadius: '2px' }}></div>
+              <span style={{ color: 'var(--text-muted)' }}>{language === 'ru' ? (categoryRu[key] || key) : key}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
