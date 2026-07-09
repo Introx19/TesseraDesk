@@ -142,7 +142,7 @@ export default function MiniTimer() {
           </div>
         ) : isFinished ? (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
-            <button className="btn btn-primary" style={{ flex: 1, fontSize: '0.8em' }} onClick={() => extendTime(300)}>+5 {t(language as Lang, 'min') || 'm'}</button>
+            <button className="btn btn-primary" style={{ flex: 1, fontSize: '0.8em' }} onClick={() => extendTime(300)}>+5 {t(language as Lang, 'min' as any) || 'm'}</button>
             <button className="btn" style={{ flex: 1, fontSize: '0.8em' }} onClick={resetTimer}>Ок</button>
           </div>
         ) : (
