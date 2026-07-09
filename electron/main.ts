@@ -318,6 +318,7 @@ ipcMain.on('show-screenshot-menu', (event, dataUrl, strings) => {
 
 let isAppCompact = false;
 let savedWindowSize: [number, number] = [480, 650]; // default size
+let compactHeight = 380; // stores the calculated compact height
 
 ipcMain.on('set-compact-mode', (event, isCompact, height) => {
   isAppCompact = isCompact;
@@ -327,6 +328,7 @@ ipcMain.on('set-compact-mode', (event, isCompact, height) => {
       savedWindowSize = mainWindow.getSize() as [number, number];
       
       const targetHeight = height || 380;
+      compactHeight = targetHeight; // save for mini mode restore
       mainWindow.setMinimumSize(54, targetHeight);
       mainWindow.setMaximumSize(120, targetHeight);
       mainWindow.setSize(54, targetHeight);
@@ -511,11 +513,12 @@ ipcMain.on('set-mini-mode', (event, isMini) => {
       mainWindow.setSize(54, 54);
       mainWindow.setAspectRatio(1);
     } else {
+      // Restore to compact height (not hardcoded 380)
       mainWindow.setAspectRatio(0);
-      mainWindow.setMinimumSize(54, 380);
-      mainWindow.setMaximumSize(120, 840);
-      mainWindow.setSize(54, 380);
-      mainWindow.setAspectRatio(54 / 380);
+      mainWindow.setMinimumSize(54, compactHeight);
+      mainWindow.setMaximumSize(120, compactHeight);
+      mainWindow.setSize(54, compactHeight);
+      mainWindow.setAspectRatio(54 / compactHeight);
     }
   }
 });

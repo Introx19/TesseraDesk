@@ -10,6 +10,24 @@
   --accent-glow: #eab30880;
 }
 
+@keyframes miniPulse {
+  0%, 100% { box-shadow: 0 0 8px var(--accent-glow), 0 0 20px var(--accent-glow); transform: scale(1); }
+  50% { box-shadow: 0 0 16px var(--accent-glow), 0 0 36px var(--accent-glow); transform: scale(1.1); }
+}
+
+.mini-glow-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: miniPulse 2s ease-in-out infinite;
+  cursor: pointer;
+}
+
+
 :root[data-theme="light"] {
   --bg-main: color-mix(in srgb, #f0f0f0 calc(var(--bg-opacity, 0.6) * 100%), transparent);
   --bg-card: color-mix(in srgb, #ffffff calc(var(--bg-opacity, 0.6) + 0.1 * 100%), transparent);
@@ -100,7 +118,7 @@ body {
 /* Compact sidebar is fully draggable; nav-items are no-drag */
 .compact-sidebar {
   -webkit-app-region: drag;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
   transform-origin: top center;
 }
 .compact-sidebar::-webkit-scrollbar {

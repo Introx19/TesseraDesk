@@ -2,7 +2,7 @@
   "name": "tesseradesk",
   "private": true,
   "main": "dist-electron/main.js",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Professional desktop utility suite with productivity tools, scientific modules, and smart screen capture.",
   "type": "module",
   "scripts": {

@@ -13,13 +13,14 @@ export default function MiniTimer() {
   const [inputHours, setInputHours] = useState('00');
   const [inputMinutes, setInputMinutes] = useState('00');
   const [inputSeconds, setInputSeconds] = useState('00');
+  const [isFinished, setIsFinished] = useState(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
-          if (prev <= 1) { setIsRunning(false); playAlarm(); return 0; }
+          if (prev <= 1) return 0;
           return prev - 1;
         });
       }, 1000);
@@ -27,14 +28,22 @@ export default function MiniTimer() {
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
 
-  const playAlarm = () => {
+  useEffect(() => {
+    if (isRunning && timeLeft === 0) {
+      setIsRunning(false);
+      setIsFinished(true);
+      playAlarm();
+    }
+  }, [timeLeft, isRunning]);
+
+  function playAlarm() {
     if (window.electronAPI) window.electronAPI.showNotification(t(language as Lang, 'timerFinishedTitle'), t(language as Lang, 'timeIsUp'));
     let audio: HTMLAudioElement | null = null;
     if (timerSound === 'bell') audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     else if (timerSound === 'digital') audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2861/2861-preview.mp3');
     else if (timerSound) audio = new Audio(`media:///${timerSound.replace(/\\/g, '/')}`);
-    if (audio && !dndMode) { audio.volume = volume / 100; audio.play().catch(() => {}); }
-  };
+    if (audio && !dndMode) { audio.volume = volume / 100; audio.play().catch(() => { }); }
+  }
 
   const addTimeSeconds = (secs: number) => setTimeLeft(prev => prev + secs);
   const startPomodoro = (minutes: number) => { setTimeLeft(minutes * 60); setIsRunning(true); };
@@ -43,7 +52,13 @@ export default function MiniTimer() {
     if (total > 0) { setTimeLeft(total); setIsRunning(true); }
   };
   const toggleTimer = () => setIsRunning(!isRunning);
-  const resetTimer = () => { setIsRunning(false); setTimeLeft(0); };
+  const resetTimer = () => { setIsRunning(false); setTimeLeft(0); setIsFinished(false); };
+
+  const extendTime = (secs: number) => {
+    setIsFinished(false);
+    setTimeLeft(secs);
+    setIsRunning(true);
+  };
 
   const formatTime = (secs: number) => {
     const h = Math.floor(secs / 3600);
@@ -82,8 +97,8 @@ export default function MiniTimer() {
   if (isXs) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <div style={{ fontSize: clockSize, fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)', lineHeight: 1, whiteSpace: 'nowrap' }}>
-          {timeLeft > 0 ? formatTime(timeLeft) : '–:––'}
+        <div style={{ fontSize: clockSize, fontWeight: 700, fontFamily: 'monospace', color: isFinished ? '#ff3333' : 'var(--accent)', lineHeight: 1, whiteSpace: 'nowrap' }}>
+          {isFinished ? '00:00' : (timeLeft > 0 ? formatTime(timeLeft) : '–:––')}
         </div>
       </div>
     );
@@ -93,12 +108,18 @@ export default function MiniTimer() {
   if (isSm) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '8px', overflow: 'hidden' }}>
-        <div style={{ fontSize: clockSize, fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)', lineHeight: 1, whiteSpace: 'nowrap' }}>
-          {timeLeft > 0 ? formatTime(timeLeft) : '–:––'}
+        <div style={{ fontSize: clockSize, fontWeight: 700, fontFamily: 'monospace', color: isFinished ? '#ff3333' : 'var(--accent)', lineHeight: 1, whiteSpace: 'nowrap' }}>
+          {isFinished ? '00:00' : (timeLeft > 0 ? formatTime(timeLeft) : '–:––')}
         </div>
         {timeLeft > 0 && (
           <div style={{ display: 'flex', gap: '6px' }}>
             <button className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '0.85em' }} onClick={toggleTimer}>{isRunning ? '⏸' : '▶'}</button>
+            <button className="btn" style={{ padding: '4px 12px', fontSize: '0.85em' }} onClick={resetTimer}>✕</button>
+          </div>
+        )}
+        {isFinished && (
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '0.85em' }} onClick={() => extendTime(300)}>+5m</button>
             <button className="btn" style={{ padding: '4px 12px', fontSize: '0.85em' }} onClick={resetTimer}>✕</button>
           </div>
         )}
@@ -111,13 +132,18 @@ export default function MiniTimer() {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px', gap: '12px', overflow: 'hidden' }}>
         <h2 style={{ fontSize: '0.9em', margin: 0, color: 'var(--text-muted)' }}>{t(language as Lang, 'minitimer')}</h2>
-        <div style={{ fontSize: clockSize, fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)', lineHeight: 1 }}>
-          {timeLeft > 0 ? formatTime(timeLeft) : '00:00'}
+        <div style={{ fontSize: clockSize, fontWeight: 700, fontFamily: 'monospace', color: isFinished ? '#ff3333' : 'var(--accent)', lineHeight: 1 }}>
+          {isFinished ? '00:00' : (timeLeft > 0 ? formatTime(timeLeft) : '00:00')}
         </div>
         {timeLeft > 0 ? (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-primary" style={{ padding: '6px 14px' }} onClick={toggleTimer}>{isRunning ? t(language as Lang, 'pause') : t(language as Lang, 'start')}</button>
             <button className="btn" style={{ padding: '6px 14px' }} onClick={resetTimer}>{t(language as Lang, 'reset')}</button>
+          </div>
+        ) : isFinished ? (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+            <button className="btn btn-primary" style={{ flex: 1, fontSize: '0.8em' }} onClick={() => extendTime(300)}>+5 {t(language as Lang, 'min') || 'm'}</button>
+            <button className="btn" style={{ flex: 1, fontSize: '0.8em' }} onClick={resetTimer}>Ок</button>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
@@ -135,8 +161,8 @@ export default function MiniTimer() {
     <div className="panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
         <h2>{t(language as Lang, 'minitimer')}</h2>
-        <div style={{ fontSize: '4rem', fontWeight: 600, fontFamily: 'monospace', color: 'var(--accent)' }}>
-          {formatTime(timeLeft)}
+        <div style={{ fontSize: '4rem', fontWeight: 600, fontFamily: 'monospace', color: isFinished ? '#ff3333' : 'var(--accent)' }}>
+          {isFinished ? '00:00' : formatTime(timeLeft)}
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {timeLeft > 0 ? (
@@ -144,6 +170,14 @@ export default function MiniTimer() {
               <button className="btn btn-primary" onClick={toggleTimer}>{isRunning ? t(language as Lang, 'pause') : t(language as Lang, 'start')}</button>
               <button className="btn" onClick={resetTimer}>{t(language as Lang, 'reset')}</button>
             </>
+          ) : isFinished ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center', width: '100%' }}>
+              <div style={{ fontSize: '1.2rem', color: '#ff3333', fontWeight: 'bold' }}>Время вышло!</div>
+              <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => extendTime(300)}>+5 минут</button>
+                <button className="btn" style={{ flex: 1 }} onClick={resetTimer}>Ок</button>
+              </div>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', width: '100%' }}>
               {pomodoroEnabled && (

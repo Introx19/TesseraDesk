@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale, Globe } from 'lucide-react';
+import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale, Globe, ChevronDown } from 'lucide-react';
 import Stopwatch from './components/Stopwatch';
 import MiniTimer from './components/MiniTimer';
 import Reminders from './components/Reminders';
@@ -111,15 +111,18 @@ function App() {
       setMiniAnimating(true);
       setTimeout(() => {
         setIsMini(true);
+        localStorage.setItem('td-mini', 'true');
         window.electronAPI?.setMiniMode(true);
         setTimeout(() => setMiniAnimating(false), 50);
-      }, 220);
+      }, 350);
     } else {
-      // Expand: resize → animate in
+      // Expand: prepare compressed state → resize → animate in
+      setMiniAnimating(true);
       window.electronAPI?.setMiniMode(false);
       setIsMini(false);
-      setMiniAnimating(true);
-      setTimeout(() => setMiniAnimating(false), 220);
+      localStorage.setItem('td-mini', 'false');
+      // Small delay to let React mount the sidebar in its compressed state, then trigger CSS transition
+      setTimeout(() => setMiniAnimating(false), 20);
     }
   };
 
@@ -142,7 +145,11 @@ function App() {
   return (
     <>
     <Onboarding />
-    <div className="app-container" style={{ flexDirection: isCompact ? 'column' : 'row', height: isCompact ? 'auto' : '100vh' }}>
+    <div className="app-container" style={{ 
+      flexDirection: isCompact ? 'column' : 'row', 
+      height: (isCompact && !isMini) ? 'auto' : '100vh',
+      borderRadius: (isCompact && isMini) ? '20px' : '12px',
+    }}>
       {!isCompact && (
         <div className="titlebar-drag-region" onDoubleClick={toggleCompact}>
           <div className="titlebar-controls">
@@ -165,137 +172,156 @@ function App() {
         </div>
       )}
 
-      {/* MINI MODE overlay */}
+      {/* MINI MODE overlay - glowing accent button */}
       {isCompact && isMini && (
         <div
           onClick={toggleMini}
+          title="Развернуть"
           style={{
             position: 'absolute', inset: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', zIndex: 999,
-            background: 'var(--bg-main)',
+            background: 'transparent',
+            // @ts-ignore
+            WebkitAppRegion: 'drag',
           }}
         >
-          <PanelRightClose size={22} style={{ color: 'var(--accent)' }} />
-        </div>
-      )}
-
-      <div className={`sidebar ${isCompact ? 'compact-sidebar' : ''} ${miniAnimating ? 'mini-animating' : ''}`} style={{ 
-        width: isCompact ? '100%' : '60px', 
-        height: isCompact ? 'auto' : '100vh', 
-        padding: isCompact ? '8px 5px' : '45px 0 15px 0',
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center',
-        flexShrink: 0
-      }}>
-        <div style={{ flex: isCompact ? '0 1 auto' : 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center' }}>
-        {isCompact && !isMini && (
-          <button
-            className="compact-mini-btn"
-            onClick={toggleMini}
-            title="Свернуть в квадратик"
-          >
-            <ChevronsUp size={13} />
-          </button>
-        )}
-        {/* Mini state — full overlay with expand arrow */}
-        {isCompact && isMini && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)', zIndex: 10 }}>
-            <button className="compact-mini-btn" onClick={toggleMini} title="Развернуть" style={{ opacity: 1, transform: 'rotate(180deg)' }}>
-              <ChevronsUp size={18} />
-            </button>
-          </div>
-        )}
-        {activeTools.stopwatch && <div id="nav-stopwatch" className={`nav-item ${activeTab === 'stopwatch' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('stopwatch')} title={t(language as Lang, 'stopwatch')}><TimerIcon size={20} /></div>}
-        {activeTools.minitimer && <div id="nav-minitimer" className={`nav-item ${activeTab === 'minitimer' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('minitimer')} title={t(language as Lang, 'minitimer')}><Hourglass size={20} /></div>}
-        {activeTools.reminders && <div id="nav-reminders" className={`nav-item ${activeTab === 'reminders' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('reminders')} title={t(language as Lang, 'reminders')}><Pin size={20} /></div>}
-        {activeTools.calc && <div id="nav-calc" className={`nav-item ${activeTab === 'calc' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('calc')} title={t(language as Lang, 'calc')}><CalculatorIcon size={20} /></div>}
-        {activeTools.tasks && <div id="nav-tasks" className={`nav-item ${activeTab === 'tasks' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('tasks')} title={t(language as Lang, 'tasks')}><List size={20} /></div>}
-        {activeTools.notes && <div id="nav-notes" className={`nav-item ${activeTab === 'notes' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('notes')} title={t(language as Lang, 'notes')}><StickyNote size={20} /></div>}
-        {activeTools.periodicTable && <div id="nav-periodicTable" className={`nav-item ${activeTab === 'periodicTable' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('periodicTable')} title={t(language as Lang, 'periodicTable')}><FlaskConical size={20} /></div>}
-        {activeTools.desmos && <div id="nav-desmos" className={`nav-item ${activeTab === 'desmos' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('desmos')} title={t(language as Lang, 'desmos')}><LineChart size={20} /></div>}
-        {activeTools.formulas && <div id="nav-formulas" className={`nav-item ${activeTab === 'formulas' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('formulas')} title={t(language as Lang, 'formulas')}><BookOpen size={20} /></div>}
-        {activeTools.integrals && <div id="nav-integrals" className={`nav-item ${activeTab === 'integrals' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('integrals')} title={t(language as Lang, 'integrals')}><FunctionSquare size={20} /></div>}
-        {activeTools.converter && <div id="nav-converter" className={`nav-item ${activeTab === 'converter' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('converter')} title={t(language as Lang, 'converter')}><Scale size={20} /></div>}
-        {activeTools.worldClock && <div id="nav-worldClock" className={`nav-item ${activeTab === 'worldClock' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('worldClock')} title={t(language as Lang, 'dlc_worldClock_name' as any)}><Globe size={20} /></div>}
-        
-        {(activeTools.stopwatch || activeTools.minitimer || activeTools.reminders || activeTools.calc || activeTools.tasks || activeTools.notes) && (activeTools.screenshot || activeTools.paint) && (
-          <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px auto' }}></div>
-        )}
-        
-        {activeTools.screenshot && <div id="nav-screenshot" className="nav-item" onClick={takeScreenshot} title={t(language as Lang, 'screenshot')}><Scissors size={20} /></div>}
-        {activeTools.paint && <div id="nav-paint" className="nav-item" onClick={openPaint} title={t(language as Lang, 'paint')}><Palette size={20} /></div>}
-        
-        {!isCompact && (
-          <>
-            <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px 0' }}></div>
-            <div id="nav-dnd" className={`nav-item ${dndMode ? 'active' : ''}`} onClick={() => updateSettings({ dndMode: !dndMode })} title={dndMode ? t(language as Lang, 'dndOn') : t(language as Lang, 'dndOff')}><Moon size={20} /></div>
-            
-            <div style={{ position: 'relative' }}>
-              <div 
-                id="nav-opacity"
-                className={`nav-item ${isOpaque ? 'active' : ''}`} 
-                onClick={() => setIsOpaque(!isOpaque)} 
-                onContextMenu={(e) => { e.preventDefault(); setShowOpacitySlider(!showOpacitySlider); }}
-                title={t(language as Lang, 'opacity')}
-              >
-                <Droplet size={20} />
-              </div>
-            </div>
-            
-            <div id="nav-settings" className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')} title={t(language as Lang, 'settings')}><SettingsIcon size={20} /></div>
-          </>
-        )}
-        </div>
-
-        {isCompact && (
           <div style={{
-            flexShrink: 0,
-            width: '100%',
-            padding: '8px 0 10px',
-            marginTop: '5px',
+            width: '34px',
+            height: '34px',
+            borderRadius: '50%',
+            background: 'var(--accent)',
             display: 'flex',
-            flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '6px',
-            background: 'transparent',
-            borderTop: '1px solid var(--glass-border)'
+            boxShadow: '0 0 12px var(--accent-glow), 0 0 28px var(--accent-glow)',
+            flexShrink: 0,
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}>
-            <button className="win-btn" onClick={toggleCompact} title={t(language as Lang, 'expand')}><PanelRightClose size={16} /></button>
-            <button className="win-btn close" onClick={() => window.electronAPI?.windowClose()} style={{ width: '24px', height: '24px' }} title={t(language as Lang, 'close')}><X size={12} /></button>
+            <PanelRightClose size={18} style={{ color: '#000', strokeWidth: 2.5 }} />
           </div>
-        )}
-      </div>
-
-      {showOpacitySlider && !isCompact && (
-        <div style={{
-          position: 'fixed', left: '65px', bottom: '15px', 
-          background: 'var(--bg-card)', padding: '15px', 
-          borderRadius: '8px', border: '1px solid var(--glass-border)',
-          display: 'flex', flexDirection: 'column', gap: '10px',
-          zIndex: 9999, width: '150px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>{t(language as Lang, 'opacity')}</span>
-            <span style={{fontSize: '0.8em', color: 'var(--accent)'}}>{Math.round(bgOpacity * 100)}%</span>
-          </div>
-          <input 
-            type="range" 
-            min="10" max="100" 
-            value={Math.round(bgOpacity * 100)} 
-            onChange={e => updateSettings({ bgOpacity: parseInt(e.target.value) / 100 })} 
-            style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
-          />
         </div>
       )}
+
+      {(!isCompact || !isMini) && (
+        <div className={`sidebar ${isCompact ? 'compact-sidebar' : ''} ${miniAnimating ? 'mini-animating' : ''}`} style={{ 
+          width: isCompact ? '100%' : '60px', 
+          height: isCompact ? 'auto' : '100vh', 
+          padding: isCompact ? '8px 5px' : '45px 0 15px 0',
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          flexShrink: 0
+        }}>
+          <div style={{ flex: isCompact ? '0 1 auto' : 1, overflowY: showOpacitySlider ? 'visible' : 'auto', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center' }}>
+            {isCompact && !isMini && (
+              <button
+                className="compact-mini-btn"
+                onClick={toggleMini}
+                title="Свернуть в квадратик"
+              >
+                <ChevronsUp size={13} />
+              </button>
+            )}
+
+            {activeTools.stopwatch && <div id="nav-stopwatch" className={`nav-item ${activeTab === 'stopwatch' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('stopwatch')} title={t(language as Lang, 'stopwatch')}><TimerIcon size={20} /></div>}
+            {activeTools.minitimer && <div id="nav-minitimer" className={`nav-item ${activeTab === 'minitimer' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('minitimer')} title={t(language as Lang, 'minitimer')}><Hourglass size={20} /></div>}
+            {activeTools.reminders && <div id="nav-reminders" className={`nav-item ${activeTab === 'reminders' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('reminders')} title={t(language as Lang, 'reminders')}><Pin size={20} /></div>}
+            {activeTools.calc && <div id="nav-calc" className={`nav-item ${activeTab === 'calc' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('calc')} title={t(language as Lang, 'calc')}><CalculatorIcon size={20} /></div>}
+            {activeTools.tasks && <div id="nav-tasks" className={`nav-item ${activeTab === 'tasks' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('tasks')} title={t(language as Lang, 'tasks')}><List size={20} /></div>}
+            {activeTools.notes && <div id="nav-notes" className={`nav-item ${activeTab === 'notes' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('notes')} title={t(language as Lang, 'notes')}><StickyNote size={20} /></div>}
+            {activeTools.periodicTable && <div id="nav-periodicTable" className={`nav-item ${activeTab === 'periodicTable' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('periodicTable')} title={t(language as Lang, 'periodicTable')}><FlaskConical size={20} /></div>}
+            {activeTools.desmos && <div id="nav-desmos" className={`nav-item ${activeTab === 'desmos' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('desmos')} title={t(language as Lang, 'desmos')}><LineChart size={20} /></div>}
+            {activeTools.formulas && <div id="nav-formulas" className={`nav-item ${activeTab === 'formulas' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('formulas')} title={t(language as Lang, 'formulas')}><BookOpen size={20} /></div>}
+            {activeTools.integrals && <div id="nav-integrals" className={`nav-item ${activeTab === 'integrals' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('integrals')} title={t(language as Lang, 'integrals')}><FunctionSquare size={20} /></div>}
+            {activeTools.converter && <div id="nav-converter" className={`nav-item ${activeTab === 'converter' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('converter')} title={t(language as Lang, 'converter')}><Scale size={20} /></div>}
+            {activeTools.worldClock && <div id="nav-worldClock" className={`nav-item ${activeTab === 'worldClock' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('worldClock')} title={t(language as Lang, 'dlc_worldClock_name' as any)}><Globe size={20} /></div>}
+            
+            {(activeTools.stopwatch || activeTools.minitimer || activeTools.reminders || activeTools.calc || activeTools.tasks || activeTools.notes) && (activeTools.screenshot || activeTools.paint) && (
+              <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px auto' }}></div>
+            )}
+            
+            {activeTools.screenshot && <div id="nav-screenshot" className="nav-item" onClick={takeScreenshot} title={t(language as Lang, 'screenshot')}><Scissors size={20} /></div>}
+            {activeTools.paint && <div id="nav-paint" className="nav-item" onClick={openPaint} title={t(language as Lang, 'paint')}><Palette size={20} /></div>}
+            
+            {!isCompact && (
+              <>
+                <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px 0' }}></div>
+                <div id="nav-dnd" className={`nav-item ${dndMode ? 'active' : ''}`} onClick={() => updateSettings({ dndMode: !dndMode })} title={dndMode ? t(language as Lang, 'dndOn') : t(language as Lang, 'dndOff')}><Moon size={20} /></div>
+                
+                <div style={{ position: 'relative' }}>
+                  <div 
+                    id="nav-opacity"
+                    className={`nav-item ${isOpaque ? 'active' : ''}`} 
+                    onClick={() => setIsOpaque(!isOpaque)} 
+                    onContextMenu={(e) => { e.preventDefault(); setShowOpacitySlider(!showOpacitySlider); }}
+                    title={t(language as Lang, 'opacity')}
+                    style={{ position: 'relative' }}
+                  >
+                    <Droplet size={20} />
+                    <ChevronDown size={12} style={{ position: 'absolute', right: '2px', bottom: '2px', opacity: 0.7 }} />
+                  </div>
+                  
+                  {showOpacitySlider && !isCompact && (
+                    <div style={{
+                      position: 'absolute', left: '55px', top: '50%', transform: 'translateY(-50%)', 
+                      background: 'var(--bg-card)', padding: '15px', 
+                      borderRadius: '8px', border: '1px solid var(--glass-border)',
+                      display: 'flex', flexDirection: 'column', gap: '10px',
+                      zIndex: 9999, width: '150px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>{t(language as Lang, 'opacity')}</span>
+                        <span style={{fontSize: '0.8em', color: 'var(--accent)'}}>{Math.round(bgOpacity * 100)}%</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="10" max="100" 
+                        value={Math.round(bgOpacity * 100)} 
+                        onChange={e => updateSettings({ bgOpacity: parseInt(e.target.value) / 100 })} 
+                        style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                <div id="nav-settings" className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')} title={t(language as Lang, 'settings')}><SettingsIcon size={20} /></div>
+              </>
+            )}
+          </div>
+
+          {isCompact && (
+            <div style={{
+              flexShrink: 0,
+              width: '100%',
+              padding: '8px 0 10px',
+              marginTop: '5px',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: 'transparent',
+              borderTop: '1px solid var(--glass-border)'
+            }}>
+              <button className="win-btn" onClick={toggleCompact} title={t(language as Lang, 'expand')}><PanelRightClose size={16} /></button>
+              <button className="win-btn close" onClick={() => window.electronAPI?.windowClose()} style={{ width: '24px', height: '24px' }} title={t(language as Lang, 'close')}><X size={12} /></button>
+            </div>
+          )}
+        </div>
+      )}
+
+
 
       {!isCompact && (
         <div className="main-content">
           {activeTab === 'stopwatch' && <Stopwatch />}
-          {activeTab === 'minitimer' && <MiniTimer />}
+          
+          <div style={{ display: activeTab === 'minitimer' ? 'contents' : 'none' }}>
+            <MiniTimer />
+          </div>
           {activeTab === 'reminders' && <Reminders />}
           {activeTab === 'calc' && <Calculator />}
           {activeTab === 'tasks' && <Tasks />}
