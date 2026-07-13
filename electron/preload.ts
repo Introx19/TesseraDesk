@@ -21,4 +21,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setMiniMode: (isMini: boolean) => ipcRenderer.send('set-mini-mode', isMini),
   checkUpdates: () => ipcRenderer.invoke('check-updates'),
   onToggleGlobalShortcuts: (callback: () => void) => ipcRenderer.on('toggle-global-shortcuts', () => callback()),
+  resizeWindow: (width: number, height: number) => ipcRenderer.send('resize-window', width, height),
 })

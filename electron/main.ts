@@ -132,6 +132,16 @@ ipcMain.on('window-minimize', (event) => {
   }
 })
 
+ipcMain.on('resize-window', (event, width, height) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed()) {
+    const currentSize = win.getSize();
+    if (currentSize[0] < width || currentSize[1] < height) {
+      win.setSize(Math.max(currentSize[0], width), Math.max(currentSize[1], height));
+    }
+  }
+})
+
 ipcMain.on('open-paint', (event, filePath) => {
   if (filePath) {
     exec(`mspaint "${filePath}"`);
@@ -155,28 +165,28 @@ async function takeScreenshot(multiMode: boolean = false) {
   if (isAppCompact) mainWindow?.hide(); // Скрываем только скрытое (компактное) меню при начале скриншота
   
   try {
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const scaleFactor = primaryDisplay.scaleFactor;
+    const currentDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    const scaleFactor = currentDisplay.scaleFactor;
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
       thumbnailSize: { 
-        width: primaryDisplay.size.width * scaleFactor, 
-        height: primaryDisplay.size.height * scaleFactor 
+        width: currentDisplay.size.width * scaleFactor, 
+        height: currentDisplay.size.height * scaleFactor 
       }
     });
     
     if (sources.length === 0) throw new Error('No screen sources found');
     
-    // First source is usually the primary screen
-    const primarySource = sources[0];
-    const dataUrl = primarySource.thumbnail.toDataURL();
+    // Find source matching the current display
+    const currentSource = sources.find(s => s.display_id === currentDisplay.id.toString()) || sources[0];
+    const dataUrl = currentSource.thumbnail.toDataURL();
     
     if (!selectWindow || selectWindow.isDestroyed()) {
       selectWindow = new BrowserWindow({
-        x: primaryDisplay.bounds.x,
-        y: primaryDisplay.bounds.y,
-        width: primaryDisplay.bounds.width,
-        height: primaryDisplay.bounds.height,
+        x: currentDisplay.bounds.x,
+        y: currentDisplay.bounds.y,
+        width: currentDisplay.bounds.width,
+        height: currentDisplay.bounds.height,
         frame: false,
         transparent: true,
         alwaysOnTop: true,
@@ -210,7 +220,7 @@ async function takeScreenshot(multiMode: boolean = false) {
         }
       });
     } else {
-      selectWindow.setBounds(primaryDisplay.bounds);
+      selectWindow.setBounds(currentDisplay.bounds);
       selectWindow.webContents.send('load-screenshot-data', dataUrl);
       selectWindow.show();
     }

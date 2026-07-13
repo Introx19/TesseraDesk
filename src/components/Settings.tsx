@@ -10,6 +10,12 @@ const Settings: React.FC = () => {
   const [localShortcuts, setLocalShortcuts] = useState(shortcuts);
   const modal = useModal();
 
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.resizeWindow) {
+      window.electronAPI.resizeWindow(650, 650);
+    }
+  }, []);
+
   const handleCheckUpdates = async () => {
     if (window.electronAPI) {
       const res = await window.electronAPI.checkUpdates();
@@ -562,7 +568,7 @@ const Settings: React.FC = () => {
           <div className="settings-section">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.6.2</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.6.3</div>
             </div>
             
             <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>

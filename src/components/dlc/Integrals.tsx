@@ -41,6 +41,38 @@ export default function Integrals() {
     }
   };
 
+  const handleExpand = () => {
+    if (!expr.trim()) return;
+    try {
+      setError(null);
+      let safeExpr = expr;
+      safeExpr = safeExpr.replace(/√(\d+|\w+)/g, 'sqrt($1)');
+      safeExpr = safeExpr.replace(/π/g, 'pi');
+      
+      const res = nerdamer(`expand(${safeExpr})`).text();
+      setResult(res);
+    } catch (e: any) {
+      setError('Error expanding. Check syntax.');
+      setResult(null);
+    }
+  };
+
+  const handleDerivative = () => {
+    if (!expr.trim()) return;
+    try {
+      setError(null);
+      let safeExpr = expr;
+      safeExpr = safeExpr.replace(/√(\d+|\w+)/g, 'sqrt($1)');
+      safeExpr = safeExpr.replace(/π/g, 'pi');
+      
+      const res = nerdamer(`diff(${safeExpr}, ${variable})`).text();
+      setResult(res);
+    } catch (e: any) {
+      setError('Error differentiating. Check syntax.');
+      setResult(null);
+    }
+  };
+
   const insertText = (text: string) => {
     if (inputRef.current) {
       const start = inputRef.current.selectionStart || 0;
@@ -133,8 +165,14 @@ export default function Integrals() {
             />
           </div>
           
-          <button className="btn btn-primary" style={{ padding: '10px' }} onClick={calculateInt}>
-            <Play size={18} fill="currentColor" />
+          <button className="btn btn-primary" style={{ padding: '8px 12px', fontWeight: 'bold' }} onClick={calculateInt} title="Integrate">
+            ∫ dx
+          </button>
+          <button className="btn" style={{ padding: '8px 12px', fontWeight: 'bold' }} onClick={handleDerivative} title="Derivative">
+            d/dx
+          </button>
+          <button className="btn" style={{ padding: '8px 12px', fontWeight: 'bold' }} onClick={handleExpand} title="Expand Expression">
+            Expand
           </button>
         </div>
       </div>

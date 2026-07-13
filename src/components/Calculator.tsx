@@ -14,10 +14,16 @@ export default function Calculator() {
     try { return JSON.parse(localStorage.getItem('calc-history') || '[]'); } catch { return []; }
   });
   const [showHistory, setShowHistory] = useState(false);
+  const [isRadians, setIsRadians] = useState(() => localStorage.getItem('calc-radians') !== 'false');
+  const [justCalculated, setJustCalculated] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('calc-mode', isScientific ? 'sci' : 'std');
   }, [isScientific]);
+
+  useEffect(() => {
+    localStorage.setItem('calc-radians', String(isRadians));
+  }, [isRadians]);
 
   useEffect(() => {
     localStorage.setItem('calc-history', JSON.stringify(history));
@@ -27,6 +33,24 @@ export default function Calculator() {
 
   const appendNum = (num: string) => {
     setDisplay(prev => {
+      if (justCalculated) {
+        setJustCalculated(false);
+        const isOperator = ['/', '*', '-', '+', '^'].includes(num);
+        if (isOperator) {
+           const newStr = prev + num;
+           setTimeout(() => {
+             inputRef.current?.setSelectionRange(newStr.length, newStr.length);
+             inputRef.current?.focus();
+           }, 0);
+           return newStr;
+        } else {
+           setTimeout(() => {
+             inputRef.current?.setSelectionRange(num.length, num.length);
+             inputRef.current?.focus();
+           }, 0);
+           return num;
+        }
+      }
       if (prev === '0' || prev === 'Error') {
         setTimeout(() => {
            inputRef.current?.setSelectionRange(num.length, num.length);
@@ -58,13 +82,30 @@ export default function Calculator() {
       expr = expr.replace(/π/g, 'pi');
       expr = expr.replace(/h/g, '(6.62607015e-34)');
       expr = expr.replace(/c/g, '(299792458)');
+      
+      let scope: any = {};
+      if (!isRadians) {
+        scope = {
+          sin: (x: any) => Math.sin(Number(x) * Math.PI / 180),
+          cos: (x: any) => Math.cos(Number(x) * Math.PI / 180),
+          tan: (x: any) => Math.tan(Number(x) * Math.PI / 180),
+          asin: (x: any) => Math.asin(Number(x)) * 180 / Math.PI,
+          acos: (x: any) => Math.acos(Number(x)) * 180 / Math.PI,
+          atan: (x: any) => Math.atan(Number(x)) * 180 / Math.PI
+        };
+      }
 
-      const result = String(evaluate(expr));
+      const result = String(evaluate(expr, scope));
       setHistory(prev => {
         const newHist = [`${display} = ${result}`, ...prev].slice(0, 10);
         return newHist;
       });
       setDisplay(result);
+      setJustCalculated(true);
+      setTimeout(() => {
+        inputRef.current?.setSelectionRange(result.length, result.length);
+        inputRef.current?.focus();
+      }, 0);
     } catch {
       setDisplay('Error');
     }
@@ -144,6 +185,15 @@ export default function Calculator() {
             >
               <History size={16} />
             </button>
+            {isScientific && (
+              <button 
+                className="btn"
+                onClick={() => setIsRadians(!isRadians)}
+                style={{ padding: '6px 10px', fontSize: '0.8em', fontWeight: 'bold' }}
+              >
+                {isRadians ? 'RAD' : 'DEG'}
+              </button>
+            )}
             <button 
               className={`btn ${isScientific ? 'btn-primary' : ''}`}
               title={t(language as Lang, 'scientificMode')}
@@ -208,9 +258,10 @@ export default function Calculator() {
             {[
               { label: '(', val: '(' }, { label: ')', val: ')' },
               { label: 'x²', val: '^2' }, { label: 'x³', val: '^3' },
-              { label: '√', val: '√(' }, { label: '^', val: '^' },
-              { label: 'π', val: 'π' }, { label: 'e', val: 'e' },
+              { label: '√', val: '√(' }, { label: '∛', val: 'cbrt(' },
+              { label: '^', val: '^' }, { label: 'π', val: 'π' },
               { label: 'sin', val: 'sin(' }, { label: 'cos', val: 'cos(' },
+              { label: 'tan', val: 'tan(' }, { label: 'e', val: 'e' },
               { label: 'h', val: 'h' }, // Постоянная планка
               { label: 'c', val: 'c' } // Скорость света
             ].map(btn => (

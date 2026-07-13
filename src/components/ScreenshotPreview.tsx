@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Minus, Trash2, Crop, Check, EyeOff, Eye, Eraser, Type, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Minus, Trash2, Crop, Check, EyeOff, Eye, Eraser, Type, Loader2, ZoomIn, ZoomOut, MousePointer2 } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 import { useSettings } from '../contexts/SettingsContext';
 import { t, type Lang } from '../i18n/texts';
@@ -9,8 +9,10 @@ export default function ScreenshotPreview() {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   // Drawing & Mode state
-  const [mode, setMode] = useState<'draw' | 'crop' | 'ocr'>('draw');
+  const [mode, setMode] = useState<'none' | 'draw' | 'crop' | 'ocr'>('none');
   const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
   const [showToolbar, setShowToolbar] = useState(true);
   const [color, setColor] = useState('#ff3333');
   const [isEraser, setIsEraser] = useState(false);
@@ -78,6 +80,17 @@ export default function ScreenshotPreview() {
   };
 
   const startInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    // If middle click or left click in 'none' mode, we might want to pan
+    if ('button' in e && (e.button === 1 || (e.button === 0 && mode === 'none'))) {
+      if (scale > 1) {
+        setIsPanning(true);
+        lastPos.current = { x: e.clientX, y: e.clientY };
+      }
+      return;
+    }
+
+    if (e.button && e.button !== 0) return; // Ignore other buttons for drawing/cropping
+
     setIsDrawing(true);
     const coords = getCoords(e);
     if (mode === 'draw') {
@@ -89,6 +102,22 @@ export default function ScreenshotPreview() {
   };
 
   const processInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isPanning) {
+      let clientX, clientY;
+      if ('touches' in e) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
+      const dx = clientX - lastPos.current.x;
+      const dy = clientY - lastPos.current.y;
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+      lastPos.current = { x: clientX, y: clientY };
+      return;
+    }
+
     if (!isDrawing) return;
     const currentPos = getCoords(e);
 
@@ -113,6 +142,10 @@ export default function ScreenshotPreview() {
   };
 
   const stopInteraction = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
     if (isDrawing && mode === 'draw' && canvasRef.current) {
       setUndoStack(prev => [...prev, canvasRef.current!.toDataURL('image/png')].slice(-50));
     }
@@ -149,7 +182,7 @@ export default function ScreenshotPreview() {
 
   // Listen to global mouse events to support dragging outside the canvas
   useEffect(() => {
-    if (!isDrawing) return;
+    if (!isDrawing && !isPanning) return;
     const handleGlobalMouseMove = (e: MouseEvent | TouchEvent) => {
       processInteraction(e as any);
     };
@@ -166,7 +199,7 @@ export default function ScreenshotPreview() {
       window.removeEventListener('touchmove', handleGlobalMouseMove);
       window.removeEventListener('touchend', handleGlobalMouseUp);
     };
-  }, [isDrawing, mode, color, isEraser]); // Include dependencies used in processInteraction
+  }, [isDrawing, isPanning, mode, color, isEraser, scale]); // Include dependencies used in processInteraction
 
   const applyCrop = () => {
     if (!cropStart || !cropEnd || !canvasRef.current || !dataUrl) {
@@ -347,18 +380,22 @@ export default function ScreenshotPreview() {
         onContextMenu={handleContextMenu}
         title={t(language as Lang, 'screenshotPreviewHint')}
         onWheel={(e) => {
-          if (e.ctrlKey) {
-            e.preventDefault();
-            setScale(prev => Math.min(Math.max(0.2, prev - e.deltaY * 0.002), 5));
+          e.preventDefault();
+          const zoomSpeed = 0.002;
+          const newScale = Math.min(Math.max(0.2, scale - e.deltaY * zoomSpeed), 5);
+          setScale(newScale);
+          // Auto-center pan when zooming out completely
+          if (newScale <= 1) {
+            setPan({ x: 0, y: 0 });
           }
         }}
       >
         {dataUrl ? (
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', maxWidth: '100%', maxHeight: '100%', boxShadow: '0 5px 15px rgba(0,0,0,0.5)', borderRadius: '8px', overflow: 'hidden', transform: `scale(${scale})`, transformOrigin: 'center', transition: 'transform 0.1s' }}>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', maxWidth: '100%', maxHeight: '100%', boxShadow: '0 5px 15px rgba(0,0,0,0.5)', borderRadius: '8px', overflow: 'hidden', transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`, transformOrigin: 'center', transition: isPanning ? 'none' : 'transform 0.1s' }}>
             <img ref={imgRef} src={dataUrl} style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt="Screenshot" draggable={false} />
             <canvas
               ref={canvasRef}
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: mode !== 'draw' ? 'crosshair' : 'crosshair', touchAction: 'none' }}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: mode === 'none' ? (scale > 1 ? 'grab' : 'default') : 'crosshair', touchAction: 'none' }}
               onMouseDown={startInteraction}
               onTouchStart={startInteraction}
             />
@@ -445,35 +482,43 @@ export default function ScreenshotPreview() {
             transition: 'bottom 0.3s',
             alignItems: 'center'
           }}>
-            {mode === 'draw' ? (
+            {mode === 'draw' || mode === 'none' ? (
               <>
                 <div style={{ display: 'flex', gap: '5px', borderRight: '1px solid var(--glass-border)', paddingRight: '10px', alignItems: 'center' }}>
                   {['#ff3333', '#33ff33', '#3388ff', '#ffff33', '#ffffff'].map(c => (
                     <button
                       key={c}
-                      onClick={() => { setColor(c); setIsEraser(false); }}
-                      style={{ width: '20px', height: '20px', borderRadius: '50%', background: c, border: !isEraser && color === c ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent', cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }}
-                      title="Цвет маркера"
+                      onClick={() => { setMode('draw'); setColor(c); setIsEraser(false); }}
+                      style={{ width: '20px', height: '20px', borderRadius: '50%', background: c, border: mode === 'draw' && !isEraser && color === c ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent', cursor: 'pointer', outline: 'none', transition: 'border 0.2s' }}
+                      title={language === 'ru' ? "Цвет маркера" : "Marker Color"}
                     />
                   ))}
                 </div>
                 <button
                   className="win-btn"
-                  onClick={() => setIsEraser(!isEraser)}
-                  title="Ластик"
-                  style={{ padding: '4px 8px', color: isEraser ? 'var(--accent)' : 'var(--text-main)', background: isEraser ? 'rgba(255,255,255,0.1)' : 'transparent' }}
+                  onClick={() => { setMode('draw'); setIsEraser(true); }}
+                  title={language === 'ru' ? "Ластик" : "Eraser"}
+                  style={{ padding: '4px 8px', color: mode === 'draw' && isEraser ? 'var(--accent)' : 'var(--text-main)', background: mode === 'draw' && isEraser ? 'rgba(255,255,255,0.1)' : 'transparent' }}
                 >
                   <Eraser size={16} />
                 </button>
-                <button className="win-btn" onClick={clearCanvas} title="Удалить все рисунки" style={{ padding: '4px 8px' }}>
+                <button className="win-btn" onClick={clearCanvas} title={language === 'ru' ? "Удалить все рисунки" : "Clear All Drawings"} style={{ padding: '4px 8px' }}>
                   <Trash2 size={16} />
+                </button>
+                <button
+                  className="win-btn"
+                  onClick={() => setMode('none')}
+                  title={language === 'ru' ? "Курсор / Перемещение" : "Cursor / Pan"}
+                  style={{ padding: '4px 8px', color: mode === 'none' ? 'var(--accent)' : 'var(--text-main)', background: mode === 'none' ? 'rgba(255,255,255,0.1)' : 'transparent' }}
+                >
+                  <MousePointer2 size={16} />
                 </button>
                 <div style={{ width: '1px', height: '16px', background: 'var(--glass-border)', margin: '0 2px' }} />
                 <button
                   className="win-btn"
                   onClick={() => setMode('crop')}
-                  title="Обрезать"
-                  style={{ padding: '4px 8px', color: 'var(--text-main)' }}
+                  title={language === 'ru' ? "Обрезать" : "Crop"}
+                  style={{ padding: '4px 8px', color: mode === 'crop' ? 'var(--accent)' : 'var(--text-main)', background: mode === 'crop' ? 'rgba(255,255,255,0.1)' : 'transparent' }}
                 >
                   <Crop size={16} />
                 </button>
@@ -481,13 +526,13 @@ export default function ScreenshotPreview() {
                   className="win-btn"
                   onClick={() => setMode('ocr')}
                   title={language === 'ru' ? "Распознать текст (OCR)" : "Recognize text (OCR)"}
-                  style={{ padding: '4px 8px', color: 'var(--text-main)', opacity: isOcrRunning ? 0.5 : 1, pointerEvents: isOcrRunning ? 'none' : 'auto' }}
+                  style={{ padding: '4px 8px', color: mode === 'ocr' ? 'var(--accent)' : 'var(--text-main)', opacity: isOcrRunning ? 0.5 : 1, pointerEvents: isOcrRunning ? 'none' : 'auto' }}
                 >
                   {isOcrRunning ? <Loader2 size={16} className="spinner" /> : <Type size={16} />}
                 </button>
                 <div style={{ width: '1px', height: '16px', background: 'var(--glass-border)', margin: '0 2px' }} />
-                <button className="win-btn" onClick={() => setScale(s => Math.min(5, s + 0.2))} style={{ padding: '4px 8px' }} title="Zoom In"><ZoomIn size={16} /></button>
-                <button className="win-btn" onClick={() => setScale(s => Math.max(0.2, s - 0.2))} style={{ padding: '4px 8px' }} title="Zoom Out"><ZoomOut size={16} /></button>
+                <button className="win-btn" onClick={() => setScale(s => Math.min(5, s + 0.2))} style={{ padding: '4px 8px' }} title={language === 'ru' ? "Увеличить" : "Zoom In"}><ZoomIn size={16} /></button>
+                <button className="win-btn" onClick={() => setScale(s => Math.max(0.2, s - 0.2))} style={{ padding: '4px 8px' }} title={language === 'ru' ? "Уменьшить" : "Zoom Out"}><ZoomOut size={16} /></button>
               </>
             ) : (
               <>
@@ -509,7 +554,7 @@ export default function ScreenshotPreview() {
                   <button
                     className="win-btn"
                     onClick={mode === 'ocr' ? runOcr : applyCrop}
-                    title={mode === 'ocr' ? "Распознать" : "Применить обрезку"}
+                    title={mode === 'ocr' ? (language === 'ru' ? "Распознать" : "Recognize") : (language === 'ru' ? "Применить обрезку" : "Apply crop")}
                     style={{ padding: '4px 8px', color: mode === 'ocr' ? '#ff9900' : '#33ff33' }}
                   >
                     {mode === 'ocr' && isOcrRunning ? <Loader2 size={16} className="spinner" /> : <Check size={16} />}
@@ -518,7 +563,7 @@ export default function ScreenshotPreview() {
                 <button
                   className="win-btn"
                   onClick={cancelCrop}
-                  title="Отмена"
+                  title={language === 'ru' ? "Отмена" : "Cancel"}
                   style={{ padding: '4px 8px', color: '#ff3333' }}
                 >
                   <X size={16} />

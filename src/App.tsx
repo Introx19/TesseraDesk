@@ -214,7 +214,7 @@ function App() {
           alignItems: 'center',
           flexShrink: 0
         }}>
-          <div style={{ flex: isCompact ? '0 1 auto' : 1, overflowY: showOpacitySlider ? 'visible' : 'auto', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center' }}>
+          <div style={{ flex: isCompact ? '0 1 auto' : 1, overflowY: 'auto', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center' }}>
             {isCompact && !isMini && (
               <button
                 className="compact-mini-btn"
@@ -265,7 +265,7 @@ function App() {
                   
                   {showOpacitySlider && !isCompact && (
                     <div style={{
-                      position: 'absolute', left: '55px', top: '50%', transform: 'translateY(-50%)', 
+                      position: 'fixed', left: '70px', bottom: '80px', 
                       background: 'var(--bg-card)', padding: '15px', 
                       borderRadius: '8px', border: '1px solid var(--glass-border)',
                       display: 'flex', flexDirection: 'column', gap: '10px',
