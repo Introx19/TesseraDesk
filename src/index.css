@@ -284,6 +284,25 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.icon-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent);
+}
+
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
@@ -518,6 +537,7 @@ select.task-input option {
   box-shadow: 8px 8px 0 var(--text-main);
 }
 :root[data-style="neo-brutalism"] .btn,
+:root[data-style="neo-brutalism"] .icon-btn,
 :root[data-style="neo-brutalism"] .action-btn,
 :root[data-style="neo-brutalism"] .nav-item,
 :root[data-style="neo-brutalism"] .task-input {
@@ -556,6 +576,7 @@ select.task-input option {
   border-radius: 0;
 }
 :root[data-style="minimalist-monochrome"] .btn,
+:root[data-style="minimalist-monochrome"] .icon-btn,
 :root[data-style="minimalist-monochrome"] .action-btn,
 :root[data-style="minimalist-monochrome"] .nav-item,
 :root[data-style="minimalist-monochrome"] .task-input {
@@ -571,6 +592,7 @@ select.task-input option {
   box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
 }
 :root[data-style="material-design"] .btn,
+:root[data-style="material-design"] .icon-btn,
 :root[data-style="material-design"] .action-btn {
   border-radius: 4px;
   border: none;
@@ -593,6 +615,7 @@ select.task-input option {
   border: none;
 }
 :root[data-style="flat-design"] .btn,
+:root[data-style="flat-design"] .icon-btn,
 :root[data-style="flat-design"] .action-btn,
 :root[data-style="flat-design"] .nav-item,
 :root[data-style="flat-design"] .task-input {
@@ -612,6 +635,7 @@ select.task-input option {
   border-radius: 20px;
 }
 :root[data-style="neumorphism"] .btn,
+:root[data-style="neumorphism"] .icon-btn,
 :root[data-style="neumorphism"] .action-btn,
 :root[data-style="neumorphism"] .nav-item,
 :root[data-style="neumorphism"] .task-input {
@@ -622,6 +646,7 @@ select.task-input option {
   color: var(--text-main);
 }
 :root[data-style="neumorphism"][data-theme="light"] .btn,
+:root[data-style="neumorphism"][data-theme="light"] .icon-btn,
 :root[data-style="neumorphism"][data-theme="light"] .action-btn,
 :root[data-style="neumorphism"][data-theme="light"] .nav-item,
 :root[data-style="neumorphism"][data-theme="light"] .task-input {
@@ -658,6 +683,7 @@ select.task-input option {
   box-shadow: inset 0 0 20px rgba(0,255,255,0.2), 0 0 20px rgba(0,255,255,0.2);
 }
 :root[data-style="cyberpunk"] .btn,
+:root[data-style="cyberpunk"] .icon-btn,
 :root[data-style="cyberpunk"] .action-btn,
 :root[data-style="cyberpunk"] .nav-item {
   border-radius: 0;

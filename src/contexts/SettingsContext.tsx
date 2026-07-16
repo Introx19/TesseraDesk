@@ -18,6 +18,7 @@ export interface SettingsState {
   dndMode: boolean;
   autoUpdate: boolean;
   multiScreenshot: boolean;
+  fastScreenshot: boolean;
   globalShortcutsEnabled: boolean;
   shortcuts: {
     toggleApp: string;
@@ -44,6 +45,7 @@ export interface SettingsState {
     integrals: boolean;
     converter: boolean;
     worldClock: boolean;
+    devTools: boolean;
   };
 }
 
@@ -62,6 +64,7 @@ const defaultSettings: SettingsState = {
   dndMode: false,
   autoUpdate: true,
   multiScreenshot: false,
+  fastScreenshot: false,
   globalShortcutsEnabled: true,
   shortcuts: {
     toggleApp: '',
@@ -88,6 +91,7 @@ const defaultSettings: SettingsState = {
     integrals: false,
     converter: false,
     worldClock: false,
+    devTools: false,
   }
 };
 
@@ -121,7 +125,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     if (window.electronAPI) {
       if (settings.globalShortcutsEnabled) {
-        window.electronAPI.updateShortcuts(settings.shortcuts, settings.multiScreenshot);
+        window.electronAPI.updateShortcuts(settings.shortcuts, settings.multiScreenshot, settings.fastScreenshot);
       } else {
         // Unregister all tool shortcuts, except the master toggles
         window.electronAPI.updateShortcuts({
@@ -132,7 +136,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           openMinitimer: '',
           openReminders: '',
           openScreenshot: ''
-        }, settings.multiScreenshot);
+        }, settings.multiScreenshot, settings.fastScreenshot);
       }
       window.electronAPI.setStartupMode(settings.runAtStartup);
     }

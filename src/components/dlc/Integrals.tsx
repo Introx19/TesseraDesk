@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Play, Copy } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import nerdamer from 'nerdamer';
 import 'nerdamer/Algebra';
 import 'nerdamer/Calculus';

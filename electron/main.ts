@@ -132,6 +132,36 @@ ipcMain.on('window-minimize', (event) => {
   }
 })
 
+ipcMain.on('window-hide', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed()) win.hide();
+})
+
+ipcMain.on('window-show', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed()) win.show();
+})
+
+ipcMain.on('expand-for-picker', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed()) {
+    // @ts-ignore
+    win.oldPickerBounds = win.getBounds();
+    const currentDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    win.setBounds(currentDisplay.bounds);
+  }
+  event.returnValue = true;
+})
+
+ipcMain.on('restore-from-picker', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed()) {
+    // @ts-ignore
+    if (win.oldPickerBounds) win.setBounds(win.oldPickerBounds);
+  }
+  event.returnValue = true;
+})
+
 ipcMain.on('resize-window', (event, width, height) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win && !win.isDestroyed()) {
@@ -239,6 +269,25 @@ app.on('before-quit', () => {
 ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
   if (selectWindow) selectWindow.hide();
   
+  if (currentFastMode) {
+    const image = nativeImage.createFromDataURL(croppedDataUrl);
+    clipboard.writeImage(image);
+    // Let's close preview windows if not multiMode just in case
+    if (!multiMode) {
+      previewWindows.forEach(win => {
+        if (!win.isDestroyed()) win.close();
+      });
+      previewWindows = [];
+    }
+    if (isAppCompact && previewWindows.length === 0) mainWindow?.show();
+    
+    // Show system notification
+    if (Notification.isSupported()) {
+      new Notification({ title: 'Скриншот', body: 'Область сохранена в буфер обмена' }).show();
+    }
+    return;
+  }
+
   if (!multiMode) {
     previewWindows.forEach(win => {
       if (!win.isDestroyed()) win.close();
@@ -278,9 +327,13 @@ ipcMain.on('cropped-screenshot', (event, croppedDataUrl, multiMode) => {
   previewWindows.push(newPreviewWindow);
 });
 
-ipcMain.on('take-screenshot', (event, multiMode) => {
+ipcMain.on('take-screenshot', (event, multiMode, fastMode = false) => {
+  // Store the current fast mode in a global variable so the hotkey can use it
+  currentFastMode = fastMode;
   takeScreenshot(multiMode);
 });
+
+let currentFastMode = false;
 
 ipcMain.on('show-screenshot-menu', (event, dataUrl, strings) => {
   const template = [
@@ -406,6 +459,37 @@ ipcMain.on('open-tool-window', (event, tool) => {
   openToolWin(tool);
 });
 
+ipcMain.handle('kill-port', async (event, port) => {
+  return new Promise((resolve) => {
+    exec(`netstat -ano | findstr :${port}`, (error, stdout, stderr) => {
+      if (error || !stdout) {
+        return resolve({ success: false, message: `Порт ${port} свободен или не найден.` });
+      }
+      
+      const lines = stdout.trim().split('\n');
+      // Find a line that actually ends with the port to avoid partial matches (e.g. 300 vs 3000)
+      const targetLine = lines.find(line => {
+        const parts = line.trim().split(/\s+/);
+        return parts[1] && parts[1].endsWith(`:${port}`);
+      }) || lines[0];
+
+      const parts = targetLine.trim().split(/\s+/);
+      const pid = parts[parts.length - 1];
+
+      if (!pid || pid === '0') {
+        return resolve({ success: false, message: `Не удалось определить PID для порта ${port}.` });
+      }
+
+      exec(`taskkill /F /PID ${pid}`, (killErr, killOut, killStderr) => {
+        if (killErr) {
+          return resolve({ success: false, message: `Ошибка при закрытии процесса (PID ${pid}): ${killStderr || killErr.message}` });
+        }
+        resolve({ success: true, message: `Процесс с PID ${pid} успешно закрыт.` });
+      });
+    });
+  });
+});
+
 // --- NEW SETTINGS APIs ---
 ipcMain.handle('select-file', async (event, filters) => {
   const result = await dialog.showOpenDialog({
@@ -419,7 +503,7 @@ ipcMain.handle('select-file', async (event, filters) => {
 });
 
 let currentShortcuts: any = {};
-ipcMain.on('update-shortcuts', (event, shortcuts, multiScreenshot) => {
+ipcMain.on('update-shortcuts', (event, shortcuts, multiScreenshot, fastScreenshot) => {
   try {
     if (currentShortcuts.toggleApp) globalShortcut.unregister(currentShortcuts.toggleApp);
     if (currentShortcuts.openCalc) globalShortcut.unregister(currentShortcuts.openCalc);
@@ -446,7 +530,10 @@ ipcMain.on('update-shortcuts', (event, shortcuts, multiScreenshot) => {
       globalShortcut.register(shortcuts.openReminders, () => openToolWin('reminders'));
     }
     if (shortcuts.openScreenshot) {
-      globalShortcut.register(shortcuts.openScreenshot, () => takeScreenshot(multiScreenshot || false));
+      globalShortcut.register(shortcuts.openScreenshot, () => {
+        currentFastMode = fastScreenshot || false;
+        takeScreenshot(multiScreenshot || false);
+      });
     }
     currentShortcuts = shortcuts;
   } catch (e) {

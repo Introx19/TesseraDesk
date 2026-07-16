@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale, Globe, ChevronDown } from 'lucide-react';
+import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale, Globe, ChevronDown, Terminal } from 'lucide-react';
 import Stopwatch from './components/Stopwatch';
 import MiniTimer from './components/MiniTimer';
 import Reminders from './components/Reminders';
@@ -16,13 +16,14 @@ import Formulas from './components/dlc/Formulas';
 import Integrals from './components/dlc/Integrals';
 import Converter from './components/dlc/Converter';
 import WorldClock from './components/dlc/WorldClock';
+import DevTools from './components/dlc/DevTools';
 import ScreenshotSelect from './components/ScreenshotSelect';
 import Onboarding from './components/Onboarding';
 import { useSettings } from './contexts/SettingsContext';
 import { t, type Lang } from './i18n/texts';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals' | 'converter' | 'worldClock'>('stopwatch');
+  const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals' | 'converter' | 'worldClock' | 'devTools'>('stopwatch');
   const [isPinned, setIsPinned] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [isMini, setIsMini] = useState(false);
@@ -33,7 +34,7 @@ function App() {
 
   const [showOpacitySlider, setShowOpacitySlider] = useState(false);
 
-  const { language, activeTools, dndMode, bgOpacity, multiScreenshot, updateSettings } = useSettings();
+  const { language, activeTools, dndMode, bgOpacity, multiScreenshot, fastScreenshot, updateSettings } = useSettings();
 
   useEffect(() => {
     localStorage.setItem('tesseradesk-opaque', String(isOpaque));
@@ -60,6 +61,7 @@ function App() {
   if (hash.includes('integrals')) return <ToolWindowShell><Integrals /></ToolWindowShell>;
   if (hash.includes('converter')) return <ToolWindowShell><Converter /></ToolWindowShell>;
   if (hash.includes('worldClock')) return <ToolWindowShell><WorldClock /></ToolWindowShell>;
+  if (hash.includes('devTools')) return <ToolWindowShell><DevTools /></ToolWindowShell>;
 
   const togglePin = () => {
     const newPin = !isPinned;
@@ -87,6 +89,7 @@ function App() {
     if (activeTools.integrals) itemCount++;
     if (activeTools.converter) itemCount++;
     if (activeTools.worldClock) itemCount++;
+    if (activeTools.devTools) itemCount++;
     let hasMedia = activeTools.screenshot || activeTools.paint;
     if (activeTools.screenshot) itemCount++;
     if (activeTools.paint) itemCount++;
@@ -139,7 +142,7 @@ function App() {
   };
 
   const takeScreenshot = () => {
-    if (window.electronAPI) window.electronAPI.takeScreenshot(multiScreenshot);
+    if (window.electronAPI) window.electronAPI.takeScreenshot(multiScreenshot, fastScreenshot);
   };
 
   return (
@@ -237,6 +240,7 @@ function App() {
             {activeTools.integrals && <div id="nav-integrals" className={`nav-item ${activeTab === 'integrals' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('integrals')} title={t(language as Lang, 'integrals')}><FunctionSquare size={20} /></div>}
             {activeTools.converter && <div id="nav-converter" className={`nav-item ${activeTab === 'converter' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('converter')} title={t(language as Lang, 'converter')}><Scale size={20} /></div>}
             {activeTools.worldClock && <div id="nav-worldClock" className={`nav-item ${activeTab === 'worldClock' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('worldClock')} title={t(language as Lang, 'dlc_worldClock_name' as any)}><Globe size={20} /></div>}
+            {activeTools.devTools && <div id="nav-devTools" className={`nav-item ${activeTab === 'devTools' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('devTools')} title={t(language as Lang, 'dlc_devTools_name' as any)}><Terminal size={20} /></div>}
             
             {(activeTools.stopwatch || activeTools.minitimer || activeTools.reminders || activeTools.calc || activeTools.tasks || activeTools.notes) && (activeTools.screenshot || activeTools.paint) && (
               <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px auto' }}></div>
@@ -332,6 +336,7 @@ function App() {
           {activeTab === 'integrals' && <Integrals />}
           {activeTab === 'converter' && <Converter />}
           {activeTab === 'worldClock' && <WorldClock />}
+          {activeTab === 'devTools' && <DevTools />}
           {activeTab === 'settings' && <Settings />}
         </div>
       )}

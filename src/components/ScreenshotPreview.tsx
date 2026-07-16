@@ -89,7 +89,7 @@ export default function ScreenshotPreview() {
       return;
     }
 
-    if (e.button && e.button !== 0) return; // Ignore other buttons for drawing/cropping
+    if ('button' in e && e.button !== 0) return; // Ignore other buttons for drawing/cropping
 
     setIsDrawing(true);
     const coords = getCoords(e);
@@ -518,7 +518,7 @@ export default function ScreenshotPreview() {
                   className="win-btn"
                   onClick={() => setMode('crop')}
                   title={language === 'ru' ? "Обрезать" : "Crop"}
-                  style={{ padding: '4px 8px', color: mode === 'crop' ? 'var(--accent)' : 'var(--text-main)', background: mode === 'crop' ? 'rgba(255,255,255,0.1)' : 'transparent' }}
+                  style={{ padding: '4px 8px', color: (mode as any) === 'crop' ? 'var(--accent)' : 'var(--text-main)', background: (mode as any) === 'crop' ? 'rgba(255,255,255,0.1)' : 'transparent' }}
                 >
                   <Crop size={16} />
                 </button>
@@ -526,7 +526,7 @@ export default function ScreenshotPreview() {
                   className="win-btn"
                   onClick={() => setMode('ocr')}
                   title={language === 'ru' ? "Распознать текст (OCR)" : "Recognize text (OCR)"}
-                  style={{ padding: '4px 8px', color: mode === 'ocr' ? 'var(--accent)' : 'var(--text-main)', opacity: isOcrRunning ? 0.5 : 1, pointerEvents: isOcrRunning ? 'none' : 'auto' }}
+                  style={{ padding: '4px 8px', color: (mode as any) === 'ocr' ? 'var(--accent)' : 'var(--text-main)', opacity: isOcrRunning ? 0.5 : 1, pointerEvents: isOcrRunning ? 'none' : 'auto' }}
                 >
                   {isOcrRunning ? <Loader2 size={16} className="spinner" /> : <Type size={16} />}
                 </button>
