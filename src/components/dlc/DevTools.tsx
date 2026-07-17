@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useSettings } from '../../contexts/SettingsContext';
 import { t, type Lang } from '../../i18n/texts';
-import { Code, Trash2, Check, Copy, RefreshCw, XCircle, Pipette } from 'lucide-react';
+import { Code, Trash2, Check, Copy, RefreshCw, XCircle, Pipette, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function DevTools() {
   const { isSm } = useWindowSize();
@@ -32,6 +32,7 @@ export default function DevTools() {
   const [snippets, setSnippets] = useState<{id: string, title: string, content: string}[]>([]);
   const [newSnippetTitle, setNewSnippetTitle] = useState('');
   const [newSnippetContent, setNewSnippetContent] = useState('');
+  const [expandedSnippets, setExpandedSnippets] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const saved = localStorage.getItem('td-snippets');
@@ -424,26 +425,34 @@ export default function DevTools() {
             
             <div style={{ borderTop: '1px solid var(--glass-border)', margin: '10px 0' }}></div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
               {snippets.length === 0 && <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>No snippets yet.</div>}
-              {snippets.map(snip => (
-                <div key={snip.id} style={{ background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
-                  <div style={{ padding: '10px 15px', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)' }}>
-                    <strong style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Code size={16} color="var(--accent)"/> {snip.title}</strong>
+              {snippets.map(snip => {
+                const isExpanded = expandedSnippets[snip.id] !== false;
+                return (
+                <div key={snip.id} style={{ flexShrink: 0, background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 15px', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isExpanded ? '1px solid var(--glass-border)' : 'none' }}>
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><Code size={16} color="var(--accent)"/> {snip.title}</strong>
                     <div style={{ display: 'flex', gap: '5px' }}>
                       <button className="icon-btn" onClick={() => handleCopy(snip.content, snip.id)} title="Copy">
                         {copiedColor === snip.id ? <Check size={16} color="var(--accent)"/> : <Copy size={16} />}
+                      </button>
+                      <button className="icon-btn" onClick={() => setExpandedSnippets(prev => ({...prev, [snip.id]: !isExpanded}))} title="Toggle">
+                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </button>
                       <button className="icon-btn" onClick={() => saveSnippets(snippets.filter(s => s.id !== snip.id))} title="Delete" style={{ color: '#ff5252' }}>
                         <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
-                  <div style={{ padding: '15px', fontFamily: 'monospace', fontSize: '0.9em', whiteSpace: 'pre-wrap', maxHeight: '150px', overflowY: 'auto' }}>
-                    {snip.content}
-                  </div>
+                  {isExpanded && (
+                    <div style={{ padding: '15px', fontFamily: 'monospace', fontSize: '0.9em', whiteSpace: 'pre-wrap', maxHeight: '150px', overflowY: 'auto' }}>
+                      {snip.content}
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
