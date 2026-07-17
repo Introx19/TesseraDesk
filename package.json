@@ -2,7 +2,7 @@
   "name": "tesseradesk",
   "private": true,
   "main": "dist-electron/main.js",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Professional desktop utility suite with productivity tools, scientific modules, and smart screen capture.",
   "type": "module",
   "scripts": {
@@ -61,7 +61,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.ico"
     },
     "publish": {
       "provider": "github",

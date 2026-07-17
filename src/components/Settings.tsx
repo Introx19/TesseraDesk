@@ -63,7 +63,8 @@ const Settings: React.FC = () => {
           formulas: activeTools.formulas,
           integrals: activeTools.integrals,
           converter: activeTools.converter,
-          worldClock: activeTools.worldClock
+          worldClock: activeTools.worldClock,
+          devTools: activeTools.devTools
         }
       };
       updateSettings(defaultState);
@@ -584,7 +585,7 @@ const Settings: React.FC = () => {
           <div className="settings-section">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.7.0</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.7.1</div>
             </div>
             
             <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>

@@ -3,7 +3,7 @@ export interface ElectronAPI {
   windowClose: () => void;
   windowMinimize: () => void;
   openPaint: (filePath?: string) => void;
-  takeScreenshot: (multiMode?: boolean) => void;
+  takeScreenshot: (multiMode?: boolean, fastMode?: boolean) => void;
   setCompactMode: (isCompact: boolean) => void;
   openToolWindow: (tool: string) => void;
   showScreenshotMenu: (dataUrl: string, strings?: any) => void;
@@ -11,13 +11,18 @@ export interface ElectronAPI {
   onScreenshotData: (callback: (dataUrl: string) => void) => void;
   closePreviewWindow: () => void;
   selectFile: (filters: any[]) => Promise<string | null>;
-  updateShortcuts: (shortcuts: any, multiScreenshot: boolean) => void;
+  updateShortcuts: (shortcuts: any, multiScreenshot: boolean, fastScreenshot?: boolean) => void;
   showNotification: (title: string, body: string) => void;
   setStartupMode: (runOnStartup: boolean) => void;
   setMiniMode: (isMini: boolean) => void;
   checkUpdates: () => Promise<{ status: 'dev' | 'available' | 'latest' | 'error', version?: string }>;
   onToggleGlobalShortcuts?: (callback: () => void) => void;
   resizeWindow: (width: number, height: number) => void;
+  killPort: (port: number) => Promise<any>;
+  windowHide: () => void;
+  windowShow: () => void;
+  expandForPicker: () => void;
+  restoreFromPicker: () => void;
 }
 
 declare global {
