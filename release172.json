@@ -1,0 +1,7 @@
+{
+  "tag_name": "v1.7.2",
+  "name": "v1.7.2 - Taskbar Icon & Snippets UI Fix",
+  "body": "## What's New in v1.7.2\n\n🐛 **Hotfixes**\n- Fixed an issue where the taskbar icon was displaying the default Electron icon.\n- Fixed a layout bug in the Snippets tool where adding multiple snippets would cause the container to squish and hide content.\n- Added a new **Expand/Collapse** button for snippets to keep the list clean and manageable.\n\n*(This update will automatically install over v1.7.0 or v1.7.1)*",
+  "draft": true,
+  "prerelease": false
+}

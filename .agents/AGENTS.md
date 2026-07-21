@@ -25,14 +25,19 @@ This file contains the core architecture rules, known bugs, and constraints for 
 - **Workaround**: Instead, set `document.body.style.opacity = '0'` and `document.body.style.pointerEvents = 'none'` in React.
 - **Resizing**: Before opening the EyeDropper, the window must be expanded to full screen so the picker can select anywhere on the screen. Use synchronous IPC: `window.electronAPI.expandForPicker()` (using `ipcRenderer.sendSync`) so the JavaScript execution thread blocks and preserves the user gesture context.
 
-### B. Auto-Updater & GitHub Releases
-- **Constraint**: `electron-updater` relies on `latest.yml` and `.blockmap` files.
-- **Rule**: When creating a release via GitHub API, GitHub replaces `%20` (spaces) with dots (`.`) in filenames (e.g. `TesseraDesk.Setup.1.7.0.exe`). However, `latest.yml` uses hyphens (`TesseraDesk-Setup-1.7.0.exe`). This causes a 404 error during auto-update.
-- **Workaround**: Always manually name the uploaded file with hyphens (`?name=TesseraDesk-Setup-1.7.1.exe`) during curl API uploads.
+### B. Auto-Updater & GitHub Releases (СТРОГОЕ ПРАВИЛО)
+- **Constraint**: Для `electron-updater` **категорически нельзя** использовать файлы с пробелами в названии при загрузке релизов на GitHub.
+- **Rule**: GitHub заменяет пробелы на точки, а `electron-builder` в файле `latest.yml` прописывает дефисы. Из-за этого несовпадения ломается система автообновления (404 ошибка).
+- **Workaround**: ВСЕГДА используй названия с дефисами (например, `TesseraDesk-Setup-1.7.2.exe`) во время загрузки (параметр `?name=...` в API).
 
-### C. Windows Taskbar Icon
-- **Constraint**: If `win.icon` in `package.json` points to a `.png` file, `electron-builder` might fail to convert it to `.ico` on environments without ImageMagick, resulting in the default Electron icon appearing in the Windows Taskbar and Notifications.
-- **Rule**: Always explicitly set `"icon": "build/icon.ico"` in `package.json` under the `"win"` section, and ensure `icon.ico` is committed to the repository.
+### C. Windows Taskbar Icon & electron-builder
+- **Constraint**: Если мы меняем иконку приложения (`icon.png`), нужно убедиться, что `electron-builder` перегенерировал `.ico` файл.
+- **Rule**: Свежий `.ico` файл всегда автоматически генерируется и ложится в скрытую папку `release/.icon-ico/`.
+- **Workaround**: Его нужно вручную скопировать в папку `build/icon.ico` перед финальной сборкой, чтобы у собранного `.exe` файла и в таскбаре Windows была правильная новая иконка. (И `"icon": "build/icon.ico"` в `package.json`).
+
+### D. Списки во Flexbox (UI/CSS)
+- **Constraint**: Когда создаешь списки внутри flex-контейнера с прокруткой (`overflow-y: auto`), они могут сплющиваться.
+- **Rule**: Обязательно задавай родительскому контейнеру `flex: 1` и `min-height: 0`, а самим дочерним элементам списка — `flex-shrink: 0`. Иначе при добавлении новых элементов они будут ломаться по высоте вместо появления скролла.
 
 ### D. Global Shortcuts
 - **Constraint**: Global shortcuts block those keys across the entire OS.

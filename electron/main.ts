@@ -51,42 +51,57 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'media', privileges: { bypassCSP: true, supportFetchAPI: true, secure: true, corsEnabled: true, stream: true } }
 ])
 
-app.whenReady().then(() => {
-  protocol.registerFileProtocol('media', (request, callback) => {
-    let pathname = decodeURI(request.url.replace(/^media:\/\/\/?/, ''));
-    if (process.platform === 'win32') {
-       pathname = pathname.replace(/\//g, '\\');
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
     }
-    callback({ path: pathname });
-  });
-  createWindow();
-
-  const iconPath = path.join(process.env.VITE_PUBLIC || '', 'icon.png');
-  // Make icon smaller for Windows tray
-  const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
-  tray = new Tray(trayIcon);
-  
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Открыть TesseraDesk', click: () => {
-        mainWindow?.show();
-    }},
-    { type: 'separator' },
-    { label: 'Выход', click: () => {
-        app.exit();
-    }}
-  ]);
-  
-  tray.setToolTip('TesseraDesk');
-  tray.setContextMenu(contextMenu);
-  tray.on('click', () => {
-    mainWindow?.show();
   });
 
-  // Auto-update: only check when packaged (not in dev)
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-})
+  app.whenReady().then(() => {
+    protocol.registerFileProtocol('media', (request, callback) => {
+      let pathname = decodeURI(request.url.replace(/^media:\/\/\/?/, ''));
+      if (process.platform === 'win32') {
+         pathname = pathname.replace(/\//g, '\\');
+      }
+      callback({ path: pathname });
+    });
+    createWindow();
+
+    const iconPath = path.join(process.env.VITE_PUBLIC || '', 'icon.png');
+    // Make icon smaller for Windows tray
+    const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+    tray = new Tray(trayIcon);
+    
+    const contextMenu = Menu.buildFromTemplate([
+      { label: 'Открыть TesseraDesk', click: () => {
+          mainWindow?.show();
+      }},
+      { type: 'separator' },
+      { label: 'Выход', click: () => {
+          app.exit();
+      }}
+    ]);
+    
+    tray.setToolTip('TesseraDesk');
+    tray.setContextMenu(contextMenu);
+    tray.on('click', () => {
+      mainWindow?.show();
+    });
+
+    // Auto-update: only check when packaged (not in dev)
+    if (app.isPackaged) {
+      autoUpdater.checkForUpdatesAndNotify();
+    }
+  });
+}
 
 ipcMain.handle('check-updates', async () => {
   if (!app.isPackaged) return { status: 'dev' };

@@ -632,32 +632,33 @@ select.task-input option {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   background: var(--bg-main);
-  border-radius: 20px;
+  border-radius: 24px;
 }
 :root[data-style="neumorphism"] .btn,
 :root[data-style="neumorphism"] .icon-btn,
 :root[data-style="neumorphism"] .action-btn,
 :root[data-style="neumorphism"] .nav-item,
 :root[data-style="neumorphism"] .task-input {
-  border-radius: 12px;
+  border-radius: 14px;
   border: none;
-  box-shadow: 5px 5px 10px rgba(0,0,0,0.2), -5px -5px 10px rgba(255,255,255,0.05);
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.25), -6px -6px 12px rgba(255,255,255,0.03);
   background: var(--bg-main);
   color: var(--text-main);
+  transition: all 0.25s ease;
 }
 :root[data-style="neumorphism"][data-theme="light"] .btn,
 :root[data-style="neumorphism"][data-theme="light"] .icon-btn,
 :root[data-style="neumorphism"][data-theme="light"] .action-btn,
 :root[data-style="neumorphism"][data-theme="light"] .nav-item,
 :root[data-style="neumorphism"][data-theme="light"] .task-input {
-  box-shadow: 5px 5px 10px rgba(0,0,0,0.1), -5px -5px 10px rgba(255,255,255,0.8);
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.9);
 }
 :root[data-style="neumorphism"] .btn:active,
 :root[data-style="neumorphism"] .btn.active,
 :root[data-style="neumorphism"] .action-btn:active,
 :root[data-style="neumorphism"] .action-btn.active,
 :root[data-style="neumorphism"] .nav-item.active {
-  box-shadow: inset 5px 5px 10px rgba(0,0,0,0.2), inset -5px -5px 10px rgba(255,255,255,0.05);
+  box-shadow: inset 4px 4px 8px rgba(0,0,0,0.25), inset -4px -4px 8px rgba(255,255,255,0.03);
   color: var(--accent);
 }
 :root[data-style="neumorphism"][data-theme="light"] .btn:active,
@@ -665,8 +666,55 @@ select.task-input option {
 :root[data-style="neumorphism"][data-theme="light"] .action-btn:active,
 :root[data-style="neumorphism"][data-theme="light"] .action-btn.active,
 :root[data-style="neumorphism"][data-theme="light"] .nav-item.active {
-  box-shadow: inset 5px 5px 10px rgba(0,0,0,0.1), inset -5px -5px 10px rgba(255,255,255,0.8);
+  box-shadow: inset 4px 4px 8px rgba(0,0,0,0.08), inset -4px -4px 8px rgba(255,255,255,0.9);
   color: var(--accent);
+}
+
+/* Flat Design */
+:root[data-style="flat-design"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-main);
+  border-radius: 0;
+  border: 1px solid var(--glass-border);
+  box-shadow: none;
+}
+:root[data-style="flat-design"] .btn,
+:root[data-style="flat-design"] .icon-btn,
+:root[data-style="flat-design"] .action-btn,
+:root[data-style="flat-design"] .nav-item,
+:root[data-style="flat-design"] .task-input,
+:root[data-style="flat-design"] .settings-container,
+:root[data-style="flat-design"] .settings-sidebar {
+  border-radius: 0;
+  border: 1px solid var(--glass-border);
+  box-shadow: none;
+  transition: all 0.2s;
+}
+:root[data-style="flat-design"] .btn:hover,
+:root[data-style="flat-design"] .icon-btn:hover,
+:root[data-style="flat-design"] .action-btn:hover,
+:root[data-style="flat-design"] .nav-item:hover {
+  background: var(--text-main);
+  color: var(--bg-main);
+}
+:root[data-style="flat-design"] .sidebar {
+  border-right: 1px solid var(--glass-border);
+}
+:root[data-style="flat-design"] body.opaque-bg {
+  --bg-main: #000000 !important;
+  --bg-card: #0a0a0a !important;
+  --glass-border: #333333 !important;
+}
+:root[data-style="flat-design"][data-theme="light"] body.opaque-bg {
+  --bg-main: #ffffff !important;
+  --bg-card: #f5f5f5 !important;
+  --glass-border: #e0e0e0 !important;
+}
+:root[data-style="flat-design"][data-theme="soft"] body.opaque-bg {
+  --bg-main: #fcf9f2 !important;
+  --bg-card: #fffcf5 !important;
+  --glass-border: #e0d8cc !important;
 }
 
 /* Cyberpunk */

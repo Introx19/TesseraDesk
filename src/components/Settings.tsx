@@ -143,6 +143,7 @@ const Settings: React.FC = () => {
         >
           <option value="glassmorphism">{t(language as Lang, 'glassmorphism' as any) || 'Glassmorphism'}</option>
           <option value="neumorphism">Neumorphism</option>
+          <option value="flat-design">Flat Design</option>
         </select>
       </div>
 
@@ -585,7 +586,7 @@ const Settings: React.FC = () => {
           <div className="settings-section">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginBottom: '5px', border: 'none', padding: 0 }}>TesseraDesk</h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.7.2</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.7.3</div>
             </div>
             
             <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', marginBottom: '20px' }}>

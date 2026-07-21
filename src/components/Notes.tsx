@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Image as ImageIcon, Bold, Italic, Strikethrough, List, CheckSquare } from 'lucide-react';
+import { Trash2, Image as ImageIcon, Bold, Italic, Strikethrough, List, CheckSquare, Download, Upload, Highlighter, Eraser } from 'lucide-react';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useSettings } from '../contexts/SettingsContext';
 import { t, type Lang } from '../i18n/texts';
@@ -17,6 +17,17 @@ export default function Notes() {
     strikeThrough: false,
     insertUnorderedList: false
   });
+  
+  const [recentColors, setRecentColors] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('tesseradesk-recent-colors') || '[]');
+    } catch {
+      return ['#fef08a', '#bbf7d0', '#fbcfe8', '#bfdbfe', '#e9d5ff'];
+    }
+  });
+  
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorInputRef = useRef<HTMLInputElement>(null);
   
   const [noteHTML, setNoteHTML] = useState(() => {
     // Migrate old plain text to HTML gracefully
@@ -39,6 +50,12 @@ export default function Notes() {
   useEffect(() => {
     localStorage.setItem('tesseradesk-note-html', noteHTML);
   }, [noteHTML]);
+
+  useEffect(() => {
+    if (recentColors.length > 0) {
+      localStorage.setItem('tesseradesk-recent-colors', JSON.stringify(recentColors));
+    }
+  }, [recentColors]);
 
   useEffect(() => {
     const handleSelectionChange = () => {
@@ -68,11 +85,56 @@ export default function Notes() {
     }
   };
 
-  const applyFormat = (e: React.MouseEvent, command: string) => {
+  const applyFormat = (e: React.MouseEvent, command: string, value: string = '') => {
     e.preventDefault(); // Prevent losing focus from the editor
-    document.execCommand(command, false);
+    document.execCommand(command, false, value);
     if (editorRef.current) setNoteHTML(editorRef.current.innerHTML);
-    setActiveFormats(prev => ({ ...prev, [command]: document.queryCommandState(command) }));
+    if (command !== 'hiliteColor') {
+      setActiveFormats(prev => ({ ...prev, [command]: document.queryCommandState(command) }));
+    }
+  };
+
+  const applyHighlight = (e: React.MouseEvent | React.ChangeEvent<HTMLInputElement>, color: string, closePicker: boolean = false) => {
+    e.preventDefault();
+    document.execCommand('hiliteColor', false, color);
+    
+    // Add to recent colors if not already there, keep max 5
+    if (color !== 'transparent') {
+      setRecentColors(prev => {
+        const filtered = prev.filter(c => c !== color);
+        return [color, ...filtered].slice(0, 5);
+      });
+    }
+    if (closePicker) setShowColorPicker(false);
+  };
+
+  const exportNotes = () => {
+    const blob = new Blob([noteHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TesseraDesk_Notes_${new Date().toISOString().split('T')[0]}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importNotes = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.html,.txt';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
+          setNoteHTML(content);
+          if (editorRef.current) editorRef.current.innerHTML = content;
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
   };
 
   const insertCheckbox = () => {
@@ -85,6 +147,12 @@ export default function Notes() {
   const handleEditorClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+      const checkbox = target as HTMLInputElement;
+      if (checkbox.checked) {
+        checkbox.setAttribute('checked', 'checked');
+      } else {
+        checkbox.removeAttribute('checked');
+      }
       setTimeout(() => {
         if (editorRef.current) setNoteHTML(editorRef.current.innerHTML);
       }, 0);
@@ -176,8 +244,8 @@ export default function Notes() {
       {!isXs && !isSm && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h2 style={{ margin: 0 }}>{t(language as Lang, 'notes')}</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-             <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+           <div style={{ display: 'flex', gap: '8px' }}>
+             <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '5px' }}>
                  <ImageIcon size={14} /> {t(language as Lang, 'supportsImages')}
              </div>
              {noteHTML.trim() && (
@@ -194,13 +262,72 @@ export default function Notes() {
       )}
       
       {!isXs && !isSm && (
-        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', padding: '5px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px' }}>
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', padding: '5px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px', position: 'relative' }}>
           <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.bold ? 'var(--accent)' : 'transparent', color: activeFormats.bold ? '#000' : 'var(--text-main)', border: activeFormats.bold ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'bold')} title="Bold"><Bold size={16} /></button>
           <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.italic ? 'var(--accent)' : 'transparent', color: activeFormats.italic ? '#000' : 'var(--text-main)', border: activeFormats.italic ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'italic')} title="Italic"><Italic size={16} /></button>
           <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.strikeThrough ? 'var(--accent)' : 'transparent', color: activeFormats.strikeThrough ? '#000' : 'var(--text-main)', border: activeFormats.strikeThrough ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'strikeThrough')} title="Strikethrough"><Strikethrough size={16} /></button>
           <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 5px' }}></div>
           <button className="action-btn" style={{ padding: '4px 8px', background: activeFormats.insertUnorderedList ? 'var(--accent)' : 'transparent', color: activeFormats.insertUnorderedList ? '#000' : 'var(--text-main)', border: activeFormats.insertUnorderedList ? '1px solid var(--accent)' : '1px solid var(--glass-border)' }} onMouseDown={(e) => applyFormat(e, 'insertUnorderedList')} title="List"><List size={16} /></button>
           <button className="action-btn" style={{ padding: '4px 8px', border: '1px solid var(--glass-border)', background: 'transparent' }} onClick={insertCheckbox} title="Checkbox"><CheckSquare size={16} /></button>
+          <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 5px' }}></div>
+          <div style={{ position: 'relative' }}>
+            <button 
+              className="action-btn" 
+              style={{ padding: '4px 8px', border: showColorPicker ? '1px solid var(--accent)' : '1px solid var(--glass-border)', background: showColorPicker ? 'rgba(255,255,255,0.05)' : 'transparent' }} 
+              onClick={() => setShowColorPicker(!showColorPicker)} 
+              title="Highlight"
+            >
+              <Highlighter size={16} />
+            </button>
+            
+            {showColorPicker && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, marginTop: '8px', zIndex: 100, 
+                background: 'var(--bg-card)', border: '1px solid var(--glass-border)', 
+                borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)'
+              }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  {recentColors.map((color, i) => (
+                    <button
+                      key={i}
+                      onMouseDown={(e) => applyHighlight(e, color, true)}
+                      style={{
+                        width: '24px', height: '24px', borderRadius: '4px', background: color, 
+                        border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer'
+                      }}
+                      title={color}
+                    />
+                  ))}
+                  <button
+                    onMouseDown={(e) => applyHighlight(e, 'transparent', true)}
+                    style={{
+                      width: '24px', height: '24px', borderRadius: '4px', background: 'transparent', 
+                      border: '1px solid var(--glass-border)', cursor: 'pointer', display: 'flex', 
+                      alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)'
+                    }}
+                    title="Remove Highlight"
+                  >
+                    <Eraser size={14} />
+                  </button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '5px' }}>
+                   <input 
+                     ref={colorInputRef}
+                     type="color" 
+                     onChange={(e) => applyHighlight(e, e.target.value, false)}
+                     onBlur={() => setShowColorPicker(false)}
+                     style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }} 
+                   />
+                   <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>Custom</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 5px' }}></div>
+          <button className="action-btn" style={{ padding: '4px 8px', border: '1px solid var(--glass-border)', background: 'transparent' }} onClick={importNotes} title={t(language as Lang, 'import' as any) || 'Import'}><Upload size={16} /></button>
+          <button className="action-btn" style={{ padding: '4px 8px', border: '1px solid var(--glass-border)', background: 'transparent' }} onClick={exportNotes} title={t(language as Lang, 'export' as any) || 'Export'}><Download size={16} /></button>
         </div>
       )}
 

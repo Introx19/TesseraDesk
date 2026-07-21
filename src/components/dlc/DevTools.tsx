@@ -32,7 +32,13 @@ export default function DevTools() {
   const [snippets, setSnippets] = useState<{id: string, title: string, content: string}[]>([]);
   const [newSnippetTitle, setNewSnippetTitle] = useState('');
   const [newSnippetContent, setNewSnippetContent] = useState('');
-  const [expandedSnippets, setExpandedSnippets] = useState<Record<string, boolean>>({});
+  const [expandedSnippets, setExpandedSnippets] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('td-snippets-expanded') || '{}');
+    } catch {
+      return {};
+    }
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem('td-snippets');
@@ -40,6 +46,9 @@ export default function DevTools() {
       try { setSnippets(JSON.parse(saved)); } catch (e) {}
     }
   }, []);
+  useEffect(() => {
+    localStorage.setItem('td-snippets-expanded', JSON.stringify(expandedSnippets));
+  }, [expandedSnippets]);
 
   const saveSnippets = (data: any) => {
     setSnippets(data);
@@ -428,7 +437,7 @@ export default function DevTools() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
               {snippets.length === 0 && <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>No snippets yet.</div>}
               {snippets.map(snip => {
-                const isExpanded = expandedSnippets[snip.id] !== false;
+                const isExpanded = expandedSnippets[snip.id] === true;
                 return (
                 <div key={snip.id} style={{ flexShrink: 0, background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--glass-border)', overflow: 'hidden' }}>
                   <div style={{ padding: '10px 15px', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isExpanded ? '1px solid var(--glass-border)' : 'none' }}>
