@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSettings } from '../contexts/SettingsContext';
+import { useSettings, defaultSettings } from '../contexts/SettingsContext';
 import { Palette, Volume2, Keyboard, PenTool, Package, CheckCircle, DownloadCloud, Trash2, Info } from 'lucide-react';
 import { t, type Lang } from '../i18n/texts';
 import { useModal } from '../contexts/ModalContext';
@@ -81,44 +81,9 @@ const Settings: React.FC = () => {
 
   const resetAllSettings = async () => {
     if (await modal.confirm(t(language as Lang, 'confirmResetSettings'))) {
-      const defaultState = {
-        theme: 'dark' as const,
-        appStyle: 'glassmorphism' as const,
-        customAccent: null,
-        customBg: null,
-        runAtStartup: false,
-        volume: 50,
-        timerSound: 'bell',
-        shortcuts: { 
-          toggleApp: 'CommandOrControl+Shift+F', 
-          toggleShortcuts: 'CommandOrControl+Shift+S',
-          openCalc: 'CommandOrControl+Space', 
-          openStopwatch: 'CommandOrControl+Shift+T',
-          openMinitimer: 'CommandOrControl+Shift+M',
-          openReminders: 'CommandOrControl+Shift+R',
-          openScreenshot: ''
-        },
-        globalShortcutsEnabled: true,
-        pomodoroWork: 25,
-        pomodoroBreak: 5,
-        dndMode: false,
-        activeTools: { 
-          stopwatch: true, minitimer: true, reminders: true, calc: true, tasks: true, notes: true, screenshot: true, paint: true, store: false, 
-          periodicTable: activeTools.periodicTable, 
-          desmos: activeTools.desmos, 
-          formulas: activeTools.formulas,
-          integrals: activeTools.integrals,
-          converter: activeTools.converter,
-          worldClock: activeTools.worldClock,
-          devTools: activeTools.devTools,
-          autoclicker: activeTools.autoclicker,
-          numismatics: activeTools.numismatics,
-          humanTyper: activeTools.humanTyper,
-          superHumanizer: activeTools.superHumanizer
-        }
-      };
-      updateSettings(defaultState);
-      setLocalShortcuts(defaultState.shortcuts);
+      const { language: _lang, superHumanizerLanguage: _shLang, ...defaultsWithoutLang } = defaultSettings;
+      updateSettings(defaultsWithoutLang);
+      setLocalShortcuts(defaultSettings.shortcuts);
     }
   };
 
@@ -782,7 +747,7 @@ const Settings: React.FC = () => {
               >
                 TesseraDesk
               </h2>
-              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.8.5</div>
+              <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.8.6</div>
             </div>
             
             <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -999,8 +964,9 @@ const Settings: React.FC = () => {
                 className="btn primary" 
                 disabled={!bugDescription.trim()}
                 onClick={() => {
-                  const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1543757195684880538/yPmvahcq3io1MzeoAE--9NW6vSPVbx8RABsj1LYbBNUaZ5KgaB65m6p8AMdh2D0OgTvh";
-                  fetch(DISCORD_WEBHOOK, {
+                  // PROXY URL: Замените 'tesseradesk-backend' на название вашего проекта в Vercel, если оно будет другим
+                  const PROXY_URL = "https://tesseradesk-backend.vercel.app/api/bug-report";
+                  fetch(PROXY_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

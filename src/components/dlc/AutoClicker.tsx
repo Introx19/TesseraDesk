@@ -15,6 +15,7 @@ export default function AutoClicker() {
     autoclickerIntervalUnit,
     autoclickerButton, 
     autoclickerRandomize,
+    autoclickerClickDelay,
     updateSettings 
   } = useSettings();
   
@@ -38,9 +39,9 @@ export default function AutoClicker() {
 
   useEffect(() => {
     if (window.electronAPI?.setAutoclickerConfig) {
-      window.electronAPI.setAutoclickerConfig(autoclickerHotkey, autoclickerInterval, autoclickerIntervalUnit, autoclickerButton, autoclickerRandomize);
+      window.electronAPI.setAutoclickerConfig(autoclickerHotkey, autoclickerInterval, autoclickerIntervalUnit, autoclickerButton, autoclickerRandomize, autoclickerClickDelay);
     }
-  }, [autoclickerHotkey, autoclickerInterval, autoclickerIntervalUnit, autoclickerButton, autoclickerRandomize]);
+  }, [autoclickerHotkey, autoclickerInterval, autoclickerIntervalUnit, autoclickerButton, autoclickerRandomize, autoclickerClickDelay]);
 
   const handleShortcutChange = (e: React.KeyboardEvent) => {
     e.preventDefault();
@@ -223,6 +224,29 @@ export default function AutoClicker() {
               step="5"
               value={autoclickerRandomize || 0}
               onChange={(e) => updateSettings({ autoclickerRandomize: Number(e.target.value) })}
+              style={{ width: '100%', accentColor: 'var(--accent-color)', height: '6px', borderRadius: '3px' }}
+            />
+          </div>
+
+          <div className="settings-section">
+            <label className="settings-label" style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9em', color: 'var(--text-muted)'}}>
+              <span>{t(language as Lang, 'htClickDelay') || 'Click Delay (ms)'}</span>
+              <span style={{
+                color: 'var(--accent-color)', 
+                fontWeight: 'bold', 
+                background: 'var(--bg-color)', 
+                padding: '2px 8px', 
+                borderRadius: '12px', 
+                fontSize: '0.9em'
+              }}>{autoclickerClickDelay || 10} ms</span>
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="200"
+              step="1"
+              value={autoclickerClickDelay || 10}
+              onChange={(e) => updateSettings({ autoclickerClickDelay: Number(e.target.value) })}
               style={{ width: '100%', accentColor: 'var(--accent-color)', height: '6px', borderRadius: '3px' }}
             />
           </div>

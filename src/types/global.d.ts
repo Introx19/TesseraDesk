@@ -41,10 +41,11 @@ export interface ElectronAPI {
   resizeWindow: (width: number, height: number) => void;
   killPort: (port: number) => Promise<any>;
   windowHide: () => void;
+  windowMinimize: () => void;
   windowShow: () => void;
   expandForPicker: () => void;
   restoreFromPicker: () => void;
-  setAutoclickerConfig: (hotkey: string, interval: number, intervalUnit: 'ms'|'s'|'m', button: 'left' | 'right' | 'middle', randomizeMs: number) => void;
+  setAutoclickerConfig: (hotkey: string, interval: number, intervalUnit: 'ms'|'s'|'m', button: 'left' | 'right' | 'middle', randomizeMs: number, clickDelay: number) => void;
   onAutoclickerStateChanged: (callback: (isActive: boolean) => void) => void;
   onWindowMaximized: (callback: (isMaximized: boolean) => void) => void;
   setHumanTyperConfig: (startHotkey: string, pauseHotkey: string, stopHotkey: string, config: any) => void;
@@ -57,10 +58,9 @@ export interface ElectronAPI {
   updateAiKey: (key: string) => void;
   analyzeText: (data: any) => Promise<any>;
   humanizeText: (data: any) => Promise<any>;
-  getPlugins: () => Promise<any[]>;
-  readPluginFile: (pluginFolderName: string, filename: string) => Promise<string | null>;
   sendWebhook: (url: string, filePath: string, message?: string) => Promise<{ success: boolean; status?: number; text?: string; error?: string }>;
   verifyPluginZip: (zipPath: string) => Promise<{valid: boolean, error?: string}>;
+  updateHumanTyperText: (text: string) => void;
 }
 
 declare global {

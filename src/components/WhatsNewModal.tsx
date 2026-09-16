@@ -1,19 +1,19 @@
 import { X, Sparkles } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
-const CURRENT_VERSION = '1.8.5';
+const CURRENT_VERSION = '1.8.6';
 
 export default function WhatsNewModal({ onClose }: { onClose: () => void }) {
   const { language } = useSettings();
   
   const items = language === 'ru' ? [
-    { icon: '🧩', title: 'Отправка плагинов в Creator Studio', desc: 'Теперь вы можете загружать свои ZIP-архивы с плагинами. Встроена умная проверка на наличие manifest.json!' },
-    { icon: '📦', title: 'Возврат нативных обновлений', desc: 'Мы вернули удобные уведомления и ручную установку обновлений (как в 1.8.2), вместо тихой фоновой загрузки.' },
-    { icon: '🚀', title: 'Улучшена производительность', desc: 'Исправлены утечки памяти в IPC, что сделало работу приложения еще более стабильной.' },
+    { icon: '🧮', title: 'Математика: Интегралы и Графики', desc: 'Удобный интерфейс определенных интегралов (с поддержкой KaTeX) и нахождение точек пересечений и экстремумов на графиках.' },
+    { icon: '🌍', title: 'Локализация и UI', desc: 'Полный перевод SuperHumanizer на английский, красивые выпадающие списки (Dropdown) и фикс бага со скрытием в панель задач.' },
+    { icon: '⚡', title: 'Шпаргалки и Human Typer', desc: 'Добавлена комбинаторика в шпаргалки, а также исправлены хоткеи и кэширование текста в Human Typer.' },
   ] : [
-    { icon: '🧩', title: 'Plugin Submission in Creator Studio', desc: 'You can now submit your own plugin ZIP archives. Includes smart manifest.json validation!' },
-    { icon: '📦', title: 'Restored Native Updates', desc: 'We restored user-friendly notifications and manual update installation (like in 1.8.2), replacing silent background downloads.' },
-    { icon: '🚀', title: 'Performance Improvements', desc: 'Fixed IPC memory leaks to make the application even more stable and smooth.' },
+    { icon: '🧮', title: 'Math: Integrals & Graphs', desc: 'New definite integrals UI (with KaTeX support) and intersection/extrema finding for graphs.' },
+    { icon: '🌍', title: 'Localization & UI', desc: 'Full English translation for SuperHumanizer, beautiful custom dropdowns, and taskbar window restore fixes.' },
+    { icon: '⚡', title: 'Formulas & Human Typer', desc: 'Added combinatorics to formulas, fixed text caching and hotkeys in Human Typer.' },
   ];
 
   return (

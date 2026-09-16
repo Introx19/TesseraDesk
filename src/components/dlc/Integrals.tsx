@@ -4,6 +4,8 @@ import { Copy } from 'lucide-react';
 import nerdamer from 'nerdamer';
 import 'nerdamer/Algebra';
 import 'nerdamer/Calculus';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 import { useSettings } from '../../contexts/SettingsContext';
 import { t, type Lang } from '../../i18n/texts';
 
@@ -14,7 +16,10 @@ export default function Integrals() {
   const [lowerBound, setLowerBound] = useState('');
   const [upperBound, setUpperBound] = useState('');
   const [result, setResult] = useState<string | null>(null);
+  const [resultTeX, setResultTeX] = useState<string | null>(null);
+  const [resultLabel, setResultLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDefinite, setIsDefinite] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const calculateInt = () => {
@@ -28,17 +33,24 @@ export default function Integrals() {
       safeExpr = safeExpr.replace(/π/g, 'pi');
       
       // Calculate integral
-      let res;
-      if (lowerBound && upperBound) {
-         res = nerdamer(`defint(${safeExpr}, ${lowerBound}, ${upperBound}, ${variable})`).text();
+      let resText;
+      let resTeX;
+      if (isDefinite && lowerBound && upperBound) {
+         const solved = nerdamer(`defint(${safeExpr}, ${lowerBound}, ${upperBound}, ${variable})`);
+         resText = solved.text();
+         resTeX = solved.toTeX();
       } else {
-         res = nerdamer(`integrate(${safeExpr}, ${variable})`).text();
-         res += ' + C';
+         const solved = nerdamer(`integrate(${safeExpr}, ${variable})`);
+         resText = solved.text() + ' + C';
+         resTeX = solved.toTeX() + ' + C';
       }
-      setResult(res);
+      setResult(resText);
+      setResultTeX(resTeX);
+      setResultLabel(language === 'ru' ? 'Результат интегрирования:' : 'Integration Result:');
     } catch (e: any) {
       setError('Error parsing or integrating. Check syntax.');
       setResult(null);
+      setResultTeX(null);
     }
   };
 
@@ -50,11 +62,14 @@ export default function Integrals() {
       safeExpr = safeExpr.replace(/√(\d+|\w+)/g, 'sqrt($1)');
       safeExpr = safeExpr.replace(/π/g, 'pi');
       
-      const res = nerdamer(`expand(${safeExpr})`).text();
-      setResult(res);
+      const solved = nerdamer(`expand(${safeExpr})`);
+      setResult(solved.text());
+      setResultTeX(solved.toTeX());
+      setResultLabel(language === 'ru' ? 'Результат раскрытия:' : 'Expansion Result:');
     } catch (e: any) {
       setError('Error expanding. Check syntax.');
       setResult(null);
+      setResultTeX(null);
     }
   };
 
@@ -66,11 +81,14 @@ export default function Integrals() {
       safeExpr = safeExpr.replace(/√(\d+|\w+)/g, 'sqrt($1)');
       safeExpr = safeExpr.replace(/π/g, 'pi');
       
-      const res = nerdamer(`diff(${safeExpr}, ${variable})`).text();
-      setResult(res);
+      const solved = nerdamer(`diff(${safeExpr}, ${variable})`);
+      setResult(solved.text());
+      setResultTeX(solved.toTeX());
+      setResultLabel(language === 'ru' ? 'Результат производной:' : 'Derivative Result:');
     } catch (e: any) {
       setError('Error differentiating. Check syntax.');
       setResult(null);
+      setResultTeX(null);
     }
   };
 
@@ -119,33 +137,62 @@ export default function Integrals() {
       <p style={{ margin: 0, fontSize: '0.85em', color: 'var(--text-muted)' }}>{t(language as Lang, 'integralsDesc')}</p>
       
       <div style={{ background: 'var(--bg-card)', padding: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', flexWrap: 'wrap' }}>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('()')}>( )</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('^')}>xⁿ</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('√()')}>√</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('sin()')}>sin</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('cos()')}>cos</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('tan()')}>tan</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('log()')}>ln</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('π')}>π</button>
-          <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('e')}>e</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', minWidth: '70px' }}>Templates:</span>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('()')}>( )</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('^')}>xⁿ</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('√()')}>√</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('abs()')}>|x|</button>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', minWidth: '70px' }}>Trig / Log:</span>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('sin()')}>sin</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('cos()')}>cos</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('tan()')}>tan</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('log()')}>ln</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('log10()')}>log₁₀</button>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', minWidth: '70px' }}>Constants:</span>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('π')}>π</button>
+            <button className="win-btn" style={{ padding: '4px 10px' }} onClick={() => insertText('e')}>e</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: '15px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9em' }}>
+            <input 
+              type="checkbox" 
+              checked={isDefinite}
+              onChange={(e) => setIsDefinite(e.target.checked)}
+              style={{ accentColor: 'var(--accent)' }}
+            />
+            {language === 'ru' ? 'Определенный интеграл' : 'Definite Integral'}
+          </label>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginRight: '5px' }}>
-            <input 
-              type="text" 
-              value={upperBound} 
-              onChange={e => setUpperBound(e.target.value)} 
-              style={{ width: '30px', textAlign: 'center', padding: '0', fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--text-main)', marginBottom: '-5px', zIndex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid var(--glass-border)', outline: 'none' }}
-            />
+            {isDefinite ? (
+              <input 
+                type="text" 
+                value={upperBound} 
+                onChange={e => setUpperBound(e.target.value)} 
+                placeholder="b"
+                style={{ width: '30px', textAlign: 'center', padding: '0', fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--text-main)', marginBottom: '-5px', zIndex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid var(--glass-border)', outline: 'none' }}
+              />
+            ) : <div style={{ height: '18px' }} />}
             <div style={{ fontSize: '2.5em', fontWeight: 300, color: 'var(--accent)', lineHeight: '0.8' }}>∫</div>
-            <input 
-              type="text" 
-              value={lowerBound} 
-              onChange={e => setLowerBound(e.target.value)} 
-              style={{ width: '30px', textAlign: 'center', padding: '0', fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--text-main)', marginTop: '-5px', zIndex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid var(--glass-border)', outline: 'none' }}
-            />
+            {isDefinite ? (
+              <input 
+                type="text" 
+                value={lowerBound} 
+                onChange={e => setLowerBound(e.target.value)} 
+                placeholder="a"
+                style={{ width: '30px', textAlign: 'center', padding: '0', fontFamily: 'monospace', fontSize: '0.85em', color: 'var(--text-main)', marginTop: '-5px', zIndex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid var(--glass-border)', outline: 'none' }}
+              />
+            ) : <div style={{ height: '18px' }} />}
           </div>
           
           <input 
@@ -190,19 +237,23 @@ export default function Integrals() {
 
       {result && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}>{t(language as Lang, 'integralsResult')}</div>
+          <div style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}>{resultLabel || t(language as Lang, 'integralsResult')}</div>
           <div style={{ 
             background: 'var(--bg-main)', 
             border: '1px solid var(--accent)', 
             padding: '20px', 
             borderRadius: '12px',
-            fontSize: '1.2em',
-            fontFamily: 'monospace',
             color: 'var(--text-main)',
             position: 'relative',
-            overflowX: 'auto'
+            overflowX: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100px'
           }} className="custom-scrollbar">
-            {result}
+            {resultTeX && (
+              <div dangerouslySetInnerHTML={{ __html: katex.renderToString(resultTeX, { displayMode: true, throwOnError: false }) }} />
+            )}
             <button className="win-btn" onClick={copyRes} style={{ position: 'absolute', right: '10px', top: '10px' }} title={t(language as Lang, 'copy')}>
               <Copy size={16} />
             </button>

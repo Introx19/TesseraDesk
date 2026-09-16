@@ -253,6 +253,11 @@ ipcMain.on('window-hide', (event) => {
   if (win && !win.isDestroyed()) win.hide();
 })
 
+ipcMain.on('window-minimize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && !win.isDestroyed()) win.minimize();
+})
+
 ipcMain.on('window-show', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win && !win.isDestroyed()) win.show();
@@ -832,6 +837,21 @@ ipcMain.on('set-mini-mode', (event, isMini) => {
 let typerState = { running: false, paused: false };
 let currentTyperHotkey = '';
 let currentTyperStopHotkey = '';
+let currentTyperPauseHotkey = '';
+let appHumanTyperText = '';
+let currentTyperConfig: any = null;
+
+ipcMain.on('update-human-typer-text', (event, text) => {
+    if (appHumanTyperText !== text) {
+        if (typerState.running || typerState.paused) {
+            typerState.running = false;
+            typerState.paused = false;
+            mainWindow?.webContents.send('human-typer-state', false);
+            mainWindow?.webContents.send('human-typer-paused', false);
+        }
+        appHumanTyperText = text;
+    }
+});
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -862,7 +882,7 @@ async function runHumanTyper(text: string, config: any) {
   const thinkMin = config.thinkMin || 350;
   const thinkMax = config.thinkMax || 1400;
 
-  await sleep(400);
+  await sleep(500);
 
   let wordTyposRemaining = 0;
   
@@ -940,26 +960,49 @@ async function runHumanTyper(text: string, config: any) {
   mainWindow?.webContents.send('human-typer-state', false);
 }
 
-ipcMain.on('set-human-typer-config', (event, startHotkey, stopHotkey, config) => {
+ipcMain.on('set-human-typer-config', (event, startHotkey, pauseHotkey, stopHotkey, config) => {
   if (currentTyperHotkey && globalShortcut.isRegistered(currentTyperHotkey)) {
     globalShortcut.unregister(currentTyperHotkey);
+  }
+  if (currentTyperPauseHotkey && globalShortcut.isRegistered(currentTyperPauseHotkey)) {
+    globalShortcut.unregister(currentTyperPauseHotkey);
   }
   if (currentTyperStopHotkey && globalShortcut.isRegistered(currentTyperStopHotkey)) {
     globalShortcut.unregister(currentTyperStopHotkey);
   }
   
   currentTyperHotkey = startHotkey;
+  currentTyperPauseHotkey = pauseHotkey;
   currentTyperStopHotkey = stopHotkey;
+  currentTyperConfig = config;
   
   if (startHotkey) {
     try {
       globalShortcut.register(startHotkey, () => {
         if (!typerState.running) {
-          const text = clipboard.readText();
+          const text = appHumanTyperText || clipboard.readText();
           if (text) {
              runHumanTyper(text, config);
              mainWindow?.webContents.send('human-typer-state', true);
+             mainWindow?.webContents.send('human-typer-paused', false);
           }
+        } else {
+          // Toggle Stop if it's running
+          typerState.running = false;
+          typerState.paused = false;
+          mainWindow?.webContents.send('human-typer-state', false);
+          mainWindow?.webContents.send('human-typer-paused', false);
+        }
+      });
+    } catch(e) {}
+  }
+
+  if (pauseHotkey) {
+    try {
+      globalShortcut.register(pauseHotkey, () => {
+        if (typerState.running) {
+          typerState.paused = !typerState.paused;
+          mainWindow?.webContents.send('human-typer-paused', typerState.paused);
         }
       });
     } catch(e) {}
@@ -969,22 +1012,37 @@ ipcMain.on('set-human-typer-config', (event, startHotkey, stopHotkey, config) =>
     try {
       globalShortcut.register(stopHotkey, () => {
          typerState.running = false;
+         typerState.paused = false;
          mainWindow?.webContents.send('human-typer-state', false);
+         mainWindow?.webContents.send('human-typer-paused', false);
       });
     } catch(e) {}
   }
 });
 
 ipcMain.on('start-human-typing', (event, text, config) => {
-    if (!typerState.running && text) {
+    if (typerState.running && typerState.paused) {
+        typerState.paused = false;
+        mainWindow?.webContents.send('human-typer-paused', false);
+    } else if (!typerState.running && text) {
         runHumanTyper(text, config);
         mainWindow?.webContents.send('human-typer-state', true);
+        mainWindow?.webContents.send('human-typer-paused', false);
+    }
+});
+
+ipcMain.on('pause-human-typing', () => {
+    if (typerState.running) {
+        typerState.paused = true;
+        mainWindow?.webContents.send('human-typer-paused', true);
     }
 });
 
 ipcMain.on('stop-human-typing', () => {
     typerState.running = false;
+    typerState.paused = false;
     mainWindow?.webContents.send('human-typer-state', false);
+    mainWindow?.webContents.send('human-typer-paused', false);
 });
 
 // ================== SUPER HUMANIZER (AI) ==================
@@ -1233,7 +1291,8 @@ let currentAutoclickerConfig = {
   interval: 100,
   intervalUnit: 'ms' as 'ms' | 's' | 'm',
   button: 'left' as 'left' | 'right' | 'middle',
-  randomizeMs: 0
+  randomizeMs: 0,
+  clickDelay: 10
 };
 
 function broadcastAutoclickerState(isActive: boolean) {
@@ -1256,11 +1315,14 @@ function getAutoclickerDelay(): number {
   return Math.max(1, Math.round(base));
 }
 
-function executeAutoclick() {
+async function executeAutoclick() {
   if (!autoclickerActive) return;
   try {
     const btn = currentAutoclickerConfig.button || 'left';
-    robot.mouseClick(btn);
+    const clickDelay = currentAutoclickerConfig.clickDelay || 10;
+    robot.mouseToggle("down", btn);
+    await sleep(clickDelay);
+    robot.mouseToggle("up", btn);
   } catch (err) {
     console.error('Autoclicker error:', err);
   }
@@ -1294,8 +1356,8 @@ function toggleAutoclicker() {
   }
 }
 
-ipcMain.on('set-autoclicker-config', (event, hotkey, interval, intervalUnit, button, randomizeMs) => {
-  currentAutoclickerConfig = { interval, intervalUnit, button, randomizeMs };
+ipcMain.on('set-autoclicker-config', (event, hotkey, interval, intervalUnit, button, randomizeMs, clickDelay) => {
+  currentAutoclickerConfig = { interval, intervalUnit, button, randomizeMs, clickDelay };
   if (hotkey !== currentAutoclickerHotkey) {
     if (currentAutoclickerHotkey) {
       try { globalShortcut.unregister(currentAutoclickerHotkey); } catch (e) {}

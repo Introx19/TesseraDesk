@@ -76,6 +76,26 @@
       ]
     },
     {
+      "category": "Математика (Комбинаторика)",
+      "items": [
+        {
+          "name": "Перестановки",
+          "formula": "Pₙ = n!",
+          "description": "Число способов упорядочить n различных элементов"
+        },
+        {
+          "name": "Размещения",
+          "formula": "Aₙᵏ = n! / (n - k)!",
+          "description": "Упорядоченный выбор k элементов из n"
+        },
+        {
+          "name": "Сочетания",
+          "formula": "Cₙᵏ = n! / (k! · (n - k)!)",
+          "description": "Неупорядоченный выбор k элементов из n"
+        }
+      ]
+    },
+    {
       "category": "Математика (Геометрия)",
       "items": [
         {
@@ -319,6 +339,26 @@
           "name": "Double Angle Cosine",
           "formula": "cos(2α) = cos²α - sin²α",
           "description": ""
+        }
+      ]
+    },
+    {
+      "category": "Mathematics (Combinatorics)",
+      "items": [
+        {
+          "name": "Permutations",
+          "formula": "Pₙ = n!",
+          "description": "Number of ways to order n distinct elements"
+        },
+        {
+          "name": "Arrangements (Permutations of k from n)",
+          "formula": "P(n,k) = n! / (n - k)!",
+          "description": "Ordered choice of k elements from n"
+        },
+        {
+          "name": "Combinations",
+          "formula": "C(n,k) = n! / (k! · (n - k)!)",
+          "description": "Unordered choice of k elements from n"
         }
       ]
     },

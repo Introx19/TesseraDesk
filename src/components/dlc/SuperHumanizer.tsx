@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import InfoButton from '../InfoButton';
+import Dropdown from '../ui/Dropdown';
 import Notes from '../Notes'; // THE REAL NOTES COMPONENT FOR DISGUISE
+import { t } from '../../i18n/texts';
 
 const MAX_SAFE_WORDS = 3000; // API token safety limit
 const SH_VERSION = '1.0.0';
@@ -147,12 +149,12 @@ const SuperHumanizer = () => {
       return;
     }
     if (!geminiApiKey) {
-      setInputError('Сначала добавьте API ключ Gemini в настройках (иконка ⚙️ вверху)');
+      setInputError(t(superHumanizerLanguage || 'ru', 'shErrorKey'));
       return;
     }
     const wc = wordCount(text);
     if (wc > MAX_SAFE_WORDS) {
-      setInputError(`Текст слишком длинный (${wc} слов). Рекомендуется до ${MAX_SAFE_WORDS} слов, чтобы избежать обрезки AI.`);
+      setInputError(t(superHumanizerLanguage || 'ru', 'shErrorLength').replace('{count}', wc.toString()).replace('{max}', MAX_SAFE_WORDS.toString()));
       // Still allow proceeding — just a warning shown
     } else {
       setInputError('');
@@ -169,7 +171,7 @@ const SuperHumanizer = () => {
         strictLength
       });
       if (res.error) {
-        setResult('❌ Ошибка: ' + res.error);
+        setResult(t(superHumanizerLanguage || 'ru', 'shErrorPrefix') + res.error);
       } else {
         const resultText = res.result || '';
         setResult(resultText);
@@ -179,7 +181,7 @@ const SuperHumanizer = () => {
         setWordDiff(resultWc - originalWc);
       }
     } catch (e: any) {
-      setResult('❌ Не удалось очеловечить текст. Проверьте API ключ и подключение к интернету.');
+      setResult(t(superHumanizerLanguage || 'ru', 'shErrorGeneral'));
     }
     setIsHumanizing(false);
   };
@@ -222,14 +224,10 @@ const SuperHumanizer = () => {
             fontSize: '0.85em', lineHeight: '1.7', color: 'var(--text-muted)'
           }}>
             <div style={{ fontWeight: 700, color: '#ff9944', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              ⚠️ Пожалуйста, прочитайте перед использованием
+              ⚠️ {t(superHumanizerLanguage || 'ru', 'shWarningFirstRun')}
             </div>
             <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <li>Это <b>первая версия</b> инструмента. Возможны ошибки, сбои и неожиданное поведение.</li>
-              <li>AI может <b>изменить смысл</b> или упростить текст сильнее, чем ожидается.</li>
-              <li>Мы <b>не несём ответственности</b> за потерю данных, изменение смысла или последствия от использования результата.</li>
-              <li>Для работы требуется <b>собственный API ключ Gemini</b> (бесплатно на Google AI Studio).</li>
-              <li>Ваш текст <b>отправляется на серверы Google</b> через Gemini API. Не используйте с конфиденциальными данными.</li>
+              <li>{t(superHumanizerLanguage || 'ru', 'shWarningDesc')}</li>
             </ul>
           </div>
 
@@ -238,10 +236,10 @@ const SuperHumanizer = () => {
             style={{ padding: '14px', fontSize: '1em', fontWeight: 700, width: '100%' }}
             onClick={() => { localStorage.setItem(EULA_KEY, '1'); setEulaAccepted(true); }}
           >
-            ✅ Понял, принимаю условия
+            {t(superHumanizerLanguage || 'ru', 'shEulaAccept')}
           </button>
           <div style={{ textAlign: 'center', fontSize: '0.78em', color: 'var(--text-muted)', marginTop: '-8px' }}>
-            Это соглашение показывается только один раз
+            {t(superHumanizerLanguage || 'ru', 'shEulaOnce')}
           </div>
         </div>
       </div>
@@ -280,7 +278,7 @@ const SuperHumanizer = () => {
           <button 
             className="icon-btn"
             onClick={() => setIsDisguised(true)}
-            title={`Маскировка под блокнот (${panicHotkey})`}
+            title={`${t(superHumanizerLanguage || 'ru', 'shDisguiseMode')} (${panicHotkey})`}
             style={{ padding: '6px' }}
           >
             <EyeOff size={16} />
@@ -288,14 +286,14 @@ const SuperHumanizer = () => {
           <button 
             className={`icon-btn ${showSettings ? 'active' : ''}`}
             onClick={() => setShowSettings(true)}
-            title="Настройки"
+            title={t(superHumanizerLanguage || 'ru', 'shSettingsTooltip')}
             style={{ padding: '6px' }}
           >
             <Settings size={16} />
           </button>
           <div style={{ transform: 'scale(0.9)' }}>
             <InfoButton 
-              text="Super Humanizer убирает признаки ИИ-генерации (ChatGPT, Claude) и переписывает текст в выбранном стиле. AI Scan анализирует вероятность детекта."
+              text={t(superHumanizerLanguage || 'ru', 'shDesc')}
             />
           </div>
         </div>
@@ -316,7 +314,7 @@ const SuperHumanizer = () => {
                 display: 'flex', alignItems: 'center', gap: '6px', padding: 0
               }}
             >
-              <FileText size={16} /> Исходный текст
+              <FileText size={16} /> {t(superHumanizerLanguage || 'ru', 'shSourceText')}
             </button>
             <button 
               onClick={() => setLeftTab('analysis')}
@@ -326,12 +324,12 @@ const SuperHumanizer = () => {
                 display: 'flex', alignItems: 'center', gap: '6px', padding: 0, marginLeft: '10px'
               }}
             >
-              <Bot size={16} /> AI Анализ
+              <Bot size={16} /> {t(superHumanizerLanguage || 'ru', 'shAnalyze')}
             </button>
             <div style={{ flex: 1 }} />
             {leftTab === 'text' && (
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {wordCount(text)} слов • {text.length} симв.
+                {wordCount(text)} {t(superHumanizerLanguage || 'ru', 'shWords')} • {text.length} {t(superHumanizerLanguage || 'ru', 'shChars')}
               </span>
             )}
           </div>
@@ -341,7 +339,7 @@ const SuperHumanizer = () => {
             <textarea
               value={text}
             onChange={(e) => { setText(e.target.value); setInputError(''); }}
-              placeholder="Вставьте сюда текст для хуманизации или проверки детектора..."
+              placeholder={t(superHumanizerLanguage || 'ru', 'shScanPrompt')}
               style={{ 
                 flex: 1, 
                 width: '100%', 
@@ -379,7 +377,7 @@ const SuperHumanizer = () => {
                       }}
                     >
                       {copiedAnalysis ? <Check size={12} color="var(--accent)" /> : <Copy size={12} />}
-                      {copiedAnalysis ? 'Скопировано!' : 'Копировать'}
+                      {copiedAnalysis ? t(superHumanizerLanguage || 'ru', 'shCopied') : t(superHumanizerLanguage || 'ru', 'shCopy')}
                     </button>
                   </div>
                   <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -390,7 +388,7 @@ const SuperHumanizer = () => {
                 </>
               ) : (
                 <div style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '40px' }}>
-                  Нажмите "AI Scan", чтобы проанализировать текст на сгенерированность ИИ.
+                  {t(superHumanizerLanguage || 'ru', 'shScanPrompt')}
                 </div>
               )}
             </div>
@@ -418,7 +416,7 @@ const SuperHumanizer = () => {
             style={{ width: '100%', margin: 0, background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--glass-border)' }}
           >
             {isAnalyzing ? <RefreshCw size={18} className="animate-spin" /> : <Bot size={18} />}
-            {isAnalyzing ? 'Анализ...' : 'AI Scan (Проверить текст)'}
+            {isAnalyzing ? '...' : t(superHumanizerLanguage || 'ru', 'shAnalyze')}
           </button>
         </div>
 
@@ -430,7 +428,7 @@ const SuperHumanizer = () => {
           <div style={{ background: 'rgba(0,0,0,0.1)', padding: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Settings size={16} style={{ color: 'var(--accent)' }}/> Настройки параметров
+                <Settings size={16} style={{ color: 'var(--accent)' }}/> {t(superHumanizerLanguage || 'ru', 'shParamsSettings')}
               </h3>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -451,7 +449,7 @@ const SuperHumanizer = () => {
                     color: strictLength ? '#000' : 'var(--text-muted)'
                   }}
                 >
-                  <Scale size={14} /> Точный размер
+                  <Scale size={14} /> {t(superHumanizerLanguage || 'ru', 'shStrictLength')}
                 </button>
                 <button
                   onClick={() => setUseWebSearch(!useWebSearch)}
@@ -470,19 +468,19 @@ const SuperHumanizer = () => {
                   color: useWebSearch ? '#000' : 'var(--text-muted)'
                 }}
               >
-                <Globe size={14} /> Web Search
+                <Globe size={14} /> {t(superHumanizerLanguage || 'ru', 'shUseWebSearch')}
               </button>
             </div>
           </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '15px' }}>
               {[
-                { name: 'Stealth', desc: '0% AI' },
-                { name: 'Casual', desc: 'Живой' },
-                { name: 'Professional', desc: 'Строгий' },
-                { name: 'Academic', desc: 'Научный' },
-                { name: 'Gen Z Slang', desc: 'Сленг' },
-                { name: 'Storyteller', desc: 'История' },
+                { name: 'Stealth', desc: t(superHumanizerLanguage || 'ru', 'shStyleStealth') },
+                { name: 'Casual', desc: t(superHumanizerLanguage || 'ru', 'shStyleCasual') },
+                { name: 'Professional', desc: t(superHumanizerLanguage || 'ru', 'shProfessional') },
+                { name: 'Academic', desc: t(superHumanizerLanguage || 'ru', 'shStyleAcademic') },
+                { name: 'Gen Z Slang', desc: t(superHumanizerLanguage || 'ru', 'shGenZSlang') },
+                { name: 'Storyteller', desc: t(superHumanizerLanguage || 'ru', 'shStoryteller') },
               ].map((s) => (
                 <div
                   key={s.name}
@@ -512,14 +510,14 @@ const SuperHumanizer = () => {
                 type="text" 
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                placeholder="Контекст или структура текста (опционально)"
+                placeholder={t(superHumanizerLanguage || 'ru', 'shContextPlaceholder')}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '10px 12px', color: 'var(--text-main)', outline: 'none', fontSize: '13px' }}
               />
               <input 
                 type="text" 
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
-                placeholder="Дополнительные пожелания (например: 'упрости сложные слова')"
+                placeholder={t(superHumanizerLanguage || 'ru', 'shCustomInstructions')}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '10px 12px', color: 'var(--text-main)', outline: 'none', fontSize: '13px' }}
               />
             </div>
@@ -531,7 +529,7 @@ const SuperHumanizer = () => {
               style={{ margin: '15px 0 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', fontSize: '14px', padding: '12px' }}
             >
               {isHumanizing ? <RefreshCw size={18} className="animate-spin" /> : <Play size={18} />}
-              {isHumanizing ? 'Очеловечиваю...' : 'Очеловечить текст'}
+              {isHumanizing ? '...' : t(superHumanizerLanguage || 'ru', 'shHumanize')}
             </button>
           </div>
 
@@ -539,11 +537,11 @@ const SuperHumanizer = () => {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)', padding: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
-                <CheckCircle2 size={16} /> Результат
+                <CheckCircle2 size={16} /> {t(superHumanizerLanguage || 'ru', 'shResult')}
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  {wordCount(result)} слов
+                  {wordCount(result)} {t(superHumanizerLanguage || 'ru', 'shWords')}
                 </span>
                 {wordDiff !== null && result && (
                   <span style={{
@@ -553,7 +551,7 @@ const SuperHumanizer = () => {
                     border: `1px solid ${Math.abs(wordDiff) > wordCount(text) * 0.15 ? 'rgba(255,153,68,0.3)' : 'rgba(68,204,136,0.3)'}`,
                     borderRadius: '6px', padding: '2px 8px'
                   }}>
-                    {wordDiff > 0 ? '+' : ''}{wordDiff} сл.
+                    {wordDiff > 0 ? '+' : ''}{wordDiff} {t(superHumanizerLanguage || 'ru', 'shWordsShort')}
                   </span>
                 )}
                 <button
@@ -573,7 +571,7 @@ const SuperHumanizer = () => {
                   }}
                 >
                   {copied ? <Check size={14} color="var(--accent)" /> : <Copy size={14} />}
-                  {copied ? 'Скопировано!' : 'Копировать'}
+                  {copied ? t(superHumanizerLanguage || 'ru', 'shCopied') : t(superHumanizerLanguage || 'ru', 'shCopy')}
                 </button>
               </div>
             </div>
@@ -581,7 +579,7 @@ const SuperHumanizer = () => {
             <textarea
               value={result}
               readOnly
-              placeholder="Здесь появится готовый, очеловеченный текст..."
+              placeholder={t(superHumanizerLanguage || 'ru', 'shResultPlaceholder')}
               style={{ 
                 flex: 1, 
                 width: '100%', 
@@ -615,7 +613,7 @@ const SuperHumanizer = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                <Settings size={20} style={{ color: 'var(--accent)' }} /> Настройки приложения
+                <Settings size={20} style={{ color: 'var(--accent)' }} /> {t(superHumanizerLanguage || 'ru', 'shAppConfig')}
               </h2>
               <button 
                 onClick={() => setShowSettings(false)}
@@ -628,12 +626,12 @@ const SuperHumanizer = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Gemini API Key</label>
+                  <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>{t(superHumanizerLanguage || 'ru', 'shApiKey')}</label>
                   <button
                     onClick={() => setShowApiKeyGuide(true)}
                     style={{ background: 'transparent', border: 'none', fontSize: '11px', fontWeight: 'bold', color: 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                   >
-                    <HelpCircle size={12} /> Где взять ключ?
+                    <HelpCircle size={12} /> {t(superHumanizerLanguage || 'ru', 'shGetApiKey')}
                   </button>
                 </div>
                 <input 
@@ -646,33 +644,33 @@ const SuperHumanizer = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>ИИ Модель (AI Model)</label>
-                <select 
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>{t(superHumanizerLanguage || 'ru', 'shModel')}</label>
+                <Dropdown 
                   value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '10px', color: 'var(--text-main)', outline: 'none' }}
-                >
-                  <option value="gemini-3.6-flash">Gemini 3.6 Flash (Быстрая)</option>
-                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Мгновенная)</option>
-                  <option value="gemini-3.7-flash">Gemini 3.7 Flash (Экспериментальная)</option>
-                  <option value="gemini-3.1-pro">Gemini 3.1 Pro (Глубокий анализ)</option>
-                </select>
+                  onChange={(v) => setModel(v)}
+                  options={[
+                    { value: "gemini-3.6-flash", label: t(superHumanizerLanguage || 'ru', 'shModelFast') },
+                    { value: "gemini-3.5-flash-lite", label: t(superHumanizerLanguage || 'ru', 'shModelInstant') },
+                    { value: "gemini-3.7-flash", label: t(superHumanizerLanguage || 'ru', 'shModelExp') },
+                    { value: "gemini-3.1-pro", label: t(superHumanizerLanguage || 'ru', 'shModelDeep') }
+                  ]}
+                />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>Язык отчета</label>
-                <select 
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>{t(superHumanizerLanguage || 'ru', 'shLanguage')}</label>
+                <Dropdown 
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as 'ru' | 'en')}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '10px', color: 'var(--text-main)', outline: 'none' }}
-                >
-                  <option value="ru">Русский (RU)</option>
-                  <option value="en">English (EN)</option>
-                </select>
+                  onChange={(v) => setLanguage(v as 'ru' | 'en')}
+                  options={[
+                    { value: "ru", label: t(superHumanizerLanguage || 'ru', 'shLangRu') },
+                    { value: "en", label: t(superHumanizerLanguage || 'ru', 'shLangEn') }
+                  ]}
+                />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>Хоткей маскировки</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>{t(superHumanizerLanguage || 'ru', 'shDisguiseHotkey')}</label>
                 <button
                   onClick={() => setRecordingHotkey(!recordingHotkey)}
                   style={{
@@ -681,7 +679,7 @@ const SuperHumanizer = () => {
                     borderRadius: '8px', padding: '10px', fontWeight: 'bold', fontFamily: 'monospace', cursor: 'pointer'
                   }}
                 >
-                  {recordingHotkey ? 'Нажмите клавишу...' : `[ ${panicHotkey} ]`}
+                  {recordingHotkey ? t(superHumanizerLanguage || 'ru', 'shPressKey') : `[ ${panicHotkey} ]`}
                 </button>
               </div>
             </div>
@@ -692,14 +690,14 @@ const SuperHumanizer = () => {
                 className="icon-btn"
                 style={{ padding: '8px 15px' }}
               >
-                Отмена
+                {t(superHumanizerLanguage || 'ru', 'shCancel')}
               </button>
               <button 
                 onClick={saveSettings}
                 className="action-btn"
                 style={{ padding: '8px 20px', margin: 0, fontWeight: 'bold' }}
               >
-                Сохранить
+                {t(superHumanizerLanguage || 'ru', 'shSave')}
               </button>
             </div>
           </div>

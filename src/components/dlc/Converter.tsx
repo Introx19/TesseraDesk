@@ -5,7 +5,7 @@ import { ArrowRightLeft } from 'lucide-react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Scale, Plus, X } from 'lucide-react';
 
-type Category = 'length' | 'mass' | 'temp' | 'data' | 'area' | 'speed' | 'volume' | 'currency';
+type Category = 'length' | 'mass' | 'temp' | 'data' | 'area' | 'speed' | 'volume' | 'currency' | 'force';
 
 const units = {
   length: {
@@ -29,7 +29,8 @@ const units = {
   temp: {
     c: { name: { en: 'Celsius', ru: 'Цельсий' } },
     f: { name: { en: 'Fahrenheit', ru: 'Фаренгейт' } },
-    k: { name: { en: 'Kelvin', ru: 'Кельвин' } }
+    k: { name: { en: 'Kelvin', ru: 'Кельвин' } },
+    r: { name: { en: 'Rankine', ru: 'Ранкин' } }
   },
   data: {
     b: { name: { en: 'Bytes', ru: 'Байты' }, factor: 1 },
@@ -71,6 +72,13 @@ const units = {
     GBP: { name: { en: 'British Pound', ru: 'Фунт стерлингов' }, rate: 0.78 },
     JPY: { name: { en: 'Japanese Yen', ru: 'Японская иена' }, rate: 150 },
     CNY: { name: { en: 'Chinese Yuan', ru: 'Китайский юань' }, rate: 7.2 }
+  },
+  force: {
+    n: { name: { en: 'Newtons', ru: 'Ньютоны' }, factor: 1 },
+    kn: { name: { en: 'Kilonewtons', ru: 'Килоньютоны' }, factor: 1000 },
+    lbf: { name: { en: 'Pound-force', ru: 'Фунт-сила' }, factor: 4.44822 },
+    kgf: { name: { en: 'Kilogram-force', ru: 'Килограмм-сила' }, factor: 9.80665 },
+    dyn: { name: { en: 'Dynes', ru: 'Дины' }, factor: 0.00001 }
   }
 };
 
@@ -80,10 +88,12 @@ const convert = (value: number, from: string, to: string, category: Category): n
     if (from === 'c') c = value;
     else if (from === 'f') c = (value - 32) * 5 / 9;
     else if (from === 'k') c = value - 273.15;
+    else if (from === 'r') c = (value - 491.67) * 5 / 9;
     
     if (to === 'c') return c;
     if (to === 'f') return (c * 9 / 5) + 32;
     if (to === 'k') return c + 273.15;
+    if (to === 'r') return (c + 273.15) * 9 / 5;
     return 0;
   }
   
@@ -184,13 +194,36 @@ const formatValue = (val: string) => {
 
 const Converter: React.FC = () => {
   const { language } = useSettings();
-  const [cat, setCat] = useState<Category>('length');
-  const [val1, setVal1] = useState<string>('1');
+  const [cat, setCat] = useState<Category>(() => (localStorage.getItem('converter_cat') as Category) || 'length');
+  const [val1, setVal1] = useState<string>(() => localStorage.getItem('converter_val1') || '1');
   
   const catUnits = Object.keys(units[cat]);
-  const [unit1, setUnit1] = useState<string>(catUnits[0]);
-  const [targetUnits, setTargetUnits] = useState<string[]>([catUnits[1] || catUnits[0]]);
+  const [unit1, setUnit1] = useState<string>(() => {
+    const saved = localStorage.getItem('converter_unit1');
+    return saved && units[cat][saved as keyof typeof units[typeof cat]] ? saved : catUnits[0];
+  });
+  
+  const [targetUnits, setTargetUnits] = useState<string[]>(() => {
+    const saved = localStorage.getItem('converter_targetUnits');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.every(u => units[cat][u as keyof typeof units[typeof cat]])) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    return [catUnits[1] || catUnits[0]];
+  });
+  
   const [lastUpdate, setLastUpdate] = useState<string>('');
+
+  useEffect(() => {
+    localStorage.setItem('converter_cat', cat);
+    localStorage.setItem('converter_val1', val1);
+    localStorage.setItem('converter_unit1', unit1);
+    localStorage.setItem('converter_targetUnits', JSON.stringify(targetUnits));
+  }, [cat, val1, unit1, targetUnits]);
 
   const handleSwapUnits = () => {
     const temp = unit1;

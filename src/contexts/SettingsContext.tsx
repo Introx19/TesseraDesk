@@ -29,6 +29,7 @@ export interface SettingsState {
   autoclickerIntervalUnit: 'ms' | 's' | 'm';
   autoclickerButton: 'left' | 'right' | 'middle';
   autoclickerRandomize: number;
+  autoclickerClickDelay: number;
   globalShortcutsEnabled: boolean;
   shortcuts: {
     toggleApp: string;
@@ -80,10 +81,10 @@ export interface SettingsState {
   humanTyperEnterMode: 'enter' | 'shift+enter';
 }
 
-const defaultSettings: SettingsState = {
+export const defaultSettings: SettingsState = {
   theme: 'dark',
   appStyle: 'glassmorphism',
-  language: 'ru',
+  language: 'en',
   customAccent: null,
   runAtStartup: false,
   volume: 50,
@@ -106,6 +107,7 @@ const defaultSettings: SettingsState = {
   autoclickerIntervalUnit: 'ms',
   autoclickerButton: 'left',
   autoclickerRandomize: 0,
+  autoclickerClickDelay: 10,
   globalShortcutsEnabled: true,
   shortcuts: {
     toggleApp: '',
@@ -150,17 +152,17 @@ const defaultSettings: SettingsState = {
     paint: true
   },
   pinnedOrder: ['stopwatch', 'minitimer', 'reminders', 'calc', 'tasks', 'notes', 'screenshot', 'paint'],
-  humanTyperSpeed: 95,
+  humanTyperSpeed: 500,
   humanTyperErrors: 28,
   humanTyperThinkPct: 35,
   humanTyperThinkMin: 350,
   humanTyperThinkMax: 1400,
-  humanTyperStartHotkey: 'F10',
-  humanTyperPauseHotkey: 'F9',
-  humanTyperStopHotkey: 'F8',
+  humanTyperStartHotkey: 'Alt+S',
+  humanTyperPauseHotkey: 'Alt+P',
+  humanTyperStopHotkey: 'Alt+X',
   geminiApiKey: '',
   geminiModel: 'gemini-3.6-flash',
-  superHumanizerLanguage: 'ru',
+  superHumanizerLanguage: 'en',
   panicHotkey: 'F9',
   discordWebhookUrl: '',
   humanTyperEnterMode: 'enter'

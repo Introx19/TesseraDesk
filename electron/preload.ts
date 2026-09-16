@@ -79,8 +79,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resizeWindow: (width: number, height: number) => ipcRenderer.send('resize-window', width, height),
   forceResizeWindow: (width: number, height: number) => ipcRenderer.send('force-resize-window', width, height),
   killPort: (port: number) => ipcRenderer.invoke('kill-port', port),
-  setAutoclickerConfig: (hotkey: string, interval: number, intervalUnit: 'ms'|'s'|'m', button: 'left'|'right'|'middle', randomizeMs: number) => {
-    ipcRenderer.send('set-autoclicker-config', hotkey, interval, intervalUnit, button, randomizeMs)
+  setAutoclickerConfig: (hotkey: string, interval: number, intervalUnit: 'ms'|'s'|'m', button: 'left'|'right'|'middle', randomizeMs: number, clickDelay: number) => {
+    ipcRenderer.send('set-autoclicker-config', hotkey, interval, intervalUnit, button, randomizeMs, clickDelay);
   },
   onAutoclickerStateChanged: (callback: (isActive: boolean) => void) => {
     const listener = (_event: any, isActive: boolean) => callback(isActive);
@@ -92,17 +92,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('window-maximized', listener);
     return () => ipcRenderer.removeListener('window-maximized', listener);
   },
-  setHumanTyperConfig: (startHotkey: string, stopHotkey: string, config: any) => {
-    ipcRenderer.send('set-human-typer-config', startHotkey, stopHotkey, config);
+  setHumanTyperConfig: (startHotkey: string, pauseHotkey: string, stopHotkey: string, config: any) => {
+    ipcRenderer.send('set-human-typer-config', startHotkey, pauseHotkey, stopHotkey, config);
   },
   startHumanTyping: (text: string, config: any) => {
     ipcRenderer.send('start-human-typing', text, config);
   },
+  updateHumanTyperText: (text: string) => {
+    ipcRenderer.send('update-human-typer-text', text);
+  },
   stopHumanTyping: () => ipcRenderer.send('stop-human-typing'),
+  pauseHumanTyping: () => ipcRenderer.send('pause-human-typing'),
   onHumanTyperState: (callback: (isActive: boolean) => void) => {
     const listener = (_event: any, isActive: boolean) => callback(isActive);
     ipcRenderer.on('human-typer-state', listener);
     return () => ipcRenderer.removeListener('human-typer-state', listener);
+  },
+  onHumanTyperPaused: (callback: (isPaused: boolean) => void) => {
+    const listener = (_event: any, isPaused: boolean) => callback(isPaused);
+    ipcRenderer.on('human-typer-paused', listener);
+    return () => ipcRenderer.removeListener('human-typer-paused', listener);
   },
   updateAiKey: (key: string) => ipcRenderer.send('update-ai-key', key),
   analyzeText: (data: any) => ipcRenderer.invoke('analyze-text', data),

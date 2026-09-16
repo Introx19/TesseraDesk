@@ -2,20 +2,23 @@ import InfoButton from '../InfoButton';
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Keyboard, Type, Settings, Play, Square, AlertCircle, Pause } from 'lucide-react';
+import { t } from '../../i18n/texts';
 
 const HumanTyper: React.FC = () => {
-  const { language, updateSettings, humanTyperSpeed, humanTyperErrors, humanTyperThinkPct, humanTyperStartHotkey, humanTyperStopHotkey } = useSettings();
+  const { language, updateSettings, humanTyperSpeed, humanTyperErrors, humanTyperThinkPct, humanTyperStartHotkey, humanTyperStopHotkey, humanTyperPauseHotkey, humanTyperEnterMode } = useSettings();
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [localText, setLocalText] = useState('');
 
   useEffect(() => {
-    if (window.electronAPI && window.electronAPI.onHumanTyperState) {
-      window.electronAPI.onHumanTyperState((state: boolean) => {
-        setIsActive(state);
-        if (!state) setIsPaused(false);
-      });
+    if (window.electronAPI) {
+      if (window.electronAPI.onHumanTyperState) {
+        window.electronAPI.onHumanTyperState((state: boolean) => {
+          setIsActive(state);
+          if (!state) setIsPaused(false);
+        });
+      }
       if (window.electronAPI.onHumanTyperPaused) {
         window.electronAPI.onHumanTyperPaused((pausedState: boolean) => {
           setIsPaused(pausedState);
@@ -23,6 +26,12 @@ const HumanTyper: React.FC = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.updateHumanTyperText) {
+      window.electronAPI.updateHumanTyperText(localText);
+    }
+  }, [localText]);
 
   const handleStart = () => {
     if (window.electronAPI) {
@@ -47,18 +56,17 @@ const HumanTyper: React.FC = () => {
       <div className="tool-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Keyboard size={20} className="tool-icon" />
-          <h2>Human Typer</h2>
-          <InfoButton text={language === 'ru' ? 'Human Typer имитирует реальную печать текста человеком с опечатками, паузами и исправлениями.' : 'Simulates authentic human typing with typos, backspace corrections, and natural thinking pauses.'} />
+          <h2>{t(language, 'htTitle')}</h2>
+          <InfoButton text={t(language, 'htDesc')} />
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             className={`icon-btn ${showSettings ? 'active' : ''}`}
             onClick={() => setShowSettings(!showSettings)}
-            title="Настройки печати"
+            title={t(language, 'htSettings')}
           >
             <Settings size={18} />
           </button>
-          
         </div>
       </div>
 
@@ -66,12 +74,12 @@ const HumanTyper: React.FC = () => {
         
         {showSettings ? (
           <div className="settings-section" style={{ marginTop: 0 }}>
-            <h3>Настройки Имитации</h3>
+            <h3>{t(language, 'htSettings')}</h3>
             
             <div className="setting-item">
               <div className="setting-info">
-                <span>Базовая задержка (мс)</span>
-                <span className="setting-desc">Время между нажатиями (чем меньше, тем быстрее)</span>
+                <span>{t(language, 'htBaseDelay')}</span>
+                <span className="setting-desc">{t(language, 'htBaseDelayDesc')}</span>
               </div>
               <input 
                 type="number" 
@@ -84,8 +92,8 @@ const HumanTyper: React.FC = () => {
             
             <div className="setting-item">
               <div className="setting-info">
-                <span>Шанс опечаток (%)</span>
-                <span className="setting-desc">Вероятность сделать опечатку в слове и затем исправить её</span>
+                <span>{t(language, 'htTypoChance')}</span>
+                <span className="setting-desc">{t(language, 'htTypoChanceDesc')}</span>
               </div>
               <input 
                 type="number" 
@@ -98,8 +106,8 @@ const HumanTyper: React.FC = () => {
 
             <div className="setting-item">
               <div className="setting-info">
-                <span>Паузы на обдумывание (%)</span>
-                <span className="setting-desc">Шанс зависнуть между словами, "подумывая" над текстом</span>
+                <span>{t(language, 'htThinkChance')}</span>
+                <span className="setting-desc">{t(language, 'htThinkChanceDesc')}</span>
               </div>
               <input 
                 type="number" 
@@ -112,23 +120,23 @@ const HumanTyper: React.FC = () => {
             
             <div className="setting-item">
               <div className="setting-info">
-                <span>Отправка новой строки</span>
-                <span className="setting-desc">Как печатать Enter</span>
+                <span>{t(language, 'htEnterMode')}</span>
+                <span className="setting-desc">{t(language, 'htEnterModeDesc')}</span>
               </div>
               <select 
-                value={useSettings().humanTyperEnterMode} 
+                value={humanTyperEnterMode} 
                 onChange={(e) => updateSettings({ humanTyperEnterMode: e.target.value as any })}
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '8px', color: 'var(--text-color)', outline: 'none', cursor: 'pointer' }}
               >
-                <option value="enter" style={{ background: '#1e1e24' }}>Просто Enter</option>
-                <option value="shift+enter" style={{ background: '#1e1e24' }}>Shift + Enter (для мессенджеров)</option>
+                <option value="enter" style={{ background: '#1e1e24' }}>{t(language, 'htEnterOnly')}</option>
+                <option value="shift+enter" style={{ background: '#1e1e24' }}>{t(language, 'htShiftEnter')}</option>
               </select>
             </div>
 
-            <h4 style={{ margin: '10px 0 5px 0', opacity: 0.8, fontSize: '0.9em' }}>Глобальные Хоткеи</h4>
+            <h4 style={{ margin: '10px 0 5px 0', opacity: 0.8, fontSize: '0.9em' }}>{t(language, 'htGlobalHotkeys')}</h4>
             
             <div className="setting-item">
-              <span>Хоткей Старта</span>
+              <span>{t(language, 'htStartHotkey')}</span>
               <input 
                 type="text" 
                 className="custom-hotkey-input"
@@ -151,16 +159,16 @@ const HumanTyper: React.FC = () => {
                   updateSettings({ humanTyperStartHotkey: keys.join('+') });
                 }}
                 style={{ width: '120px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '8px', color: 'var(--text-color)', outline: 'none', cursor: 'pointer' }}
-                placeholder="Нажми кнопку..."
+                placeholder={t(language, 'htPressKey')}
               />
             </div>
             
             <div className="setting-item">
-              <span>Хоткей Паузы</span>
+              <span>{t(language, 'htPauseHotkey')}</span>
               <input 
                 type="text" 
                 className="custom-hotkey-input"
-                value={useSettings().humanTyperPauseHotkey} 
+                value={humanTyperPauseHotkey} 
                 readOnly
                 onKeyDown={(e) => {
                   e.preventDefault();
@@ -179,12 +187,12 @@ const HumanTyper: React.FC = () => {
                   updateSettings({ humanTyperPauseHotkey: keys.join('+') });
                 }}
                 style={{ width: '120px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '8px', color: 'var(--text-color)', outline: 'none', cursor: 'pointer' }}
-                placeholder="Нажми кнопку..."
+                placeholder={t(language, 'htPressKey')}
               />
             </div>
 
             <div className="setting-item">
-              <span>Хоткей Остановки</span>
+              <span>{t(language, 'htStopHotkey')}</span>
               <input 
                 type="text" 
                 className="custom-hotkey-input"
@@ -207,7 +215,7 @@ const HumanTyper: React.FC = () => {
                   updateSettings({ humanTyperStopHotkey: keys.join('+') });
                 }}
                 style={{ width: '120px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '8px', color: 'var(--text-color)', outline: 'none', cursor: 'pointer' }}
-                placeholder="Нажми кнопку..."
+                placeholder={t(language, 'htPressKey')}
               />
             </div>
           </div>
@@ -222,12 +230,12 @@ const HumanTyper: React.FC = () => {
               borderRadius: '12px'
             }}>
               <label style={{ fontSize: '0.9em', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Type size={16} /> Текст для ввода:
+                <Type size={16} /> {t(language, 'htTextInput')}
               </label>
               <textarea 
                 className="custom-scrollbar"
                 style={{ minHeight: '120px', resize: 'vertical', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '10px', color: 'var(--text-color)', outline: 'none' }}
-                placeholder="Вставьте сюда текст для печати, или просто скопируйте его и нажмите глобальный хоткей (по умолчанию F10) вне приложения."
+                placeholder={t(language, 'htTextPlaceholder')}
                 value={localText}
                 onChange={e => setLocalText(e.target.value)}
               />
@@ -237,15 +245,15 @@ const HumanTyper: React.FC = () => {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button className="timer-btn stop" onClick={handleStop} style={{ padding: '15px', flex: 1 }}>
                   <Square size={20} />
-                  Остановить
+                  {t(language, 'htStop')}
                 </button>
                 <button 
                   className={`timer-btn ${isPaused ? 'start' : 'pause'}`} 
-                  onClick={isPaused ? () => window.electronAPI.resumeHumanTyping() : () => window.electronAPI.pauseHumanTyping()} 
+                  onClick={isPaused ? handleStart : () => window.electronAPI.pauseHumanTyping()} 
                   style={{ padding: '15px', flex: 1, background: isPaused ? 'var(--accent)' : '#ffb020', color: '#1a1a24' }}
                 >
                   {isPaused ? <Play size={20} /> : <Pause size={20} />}
-                  {isPaused ? 'Возобновить' : 'Пауза'}
+                  {isPaused ? t(language, 'htResume') : t(language, 'htPause')}
                 </button>
               </div>
             ) : (
@@ -256,13 +264,13 @@ const HumanTyper: React.FC = () => {
                 disabled={!localText.trim()}
               >
                 <Play size={20} />
-                Напечатать текст
+                {t(language, 'htStart')}
               </button>
             )}
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.6, fontSize: '0.85em', marginTop: '10px', justifyContent: 'center' }}>
               <AlertCircle size={14} />
-              <span>После нажатия Старт у вас будет 400мс, чтобы сфокусироваться на нужном окне.</span>
+              <span>{t(language, 'htStartWarning')}</span>
             </div>
           </>
         )}

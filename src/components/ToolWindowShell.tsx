@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { X, Minus } from 'lucide-react';
 import { useWindowSize } from '../hooks/useWindowSize';
 
 /** Wrapper used for detached floating tool windows.
@@ -28,6 +28,13 @@ export default function ToolWindowShell({ children }: { children: ReactNode }) {
         <div className="titlebar-drag-region" style={{ height: '24px' }}>
           <div className="titlebar-controls" style={{ marginLeft: 'auto', height: '24px' }}>
             <button
+              className="win-btn hide"
+              style={{ height: '24px', width: '24px' }}
+              onClick={() => window.electronAPI?.windowMinimize()}
+            >
+              <Minus size={12} />
+            </button>
+            <button
               className="win-btn close"
               style={{ height: '24px', width: '24px' }}
               onClick={() => window.electronAPI?.windowClose()}
@@ -48,6 +55,9 @@ export default function ToolWindowShell({ children }: { children: ReactNode }) {
     <div className="app-container" style={{ flexDirection: 'column' }}>
       <div className="titlebar-drag-region">
         <div className="titlebar-controls" style={{ marginLeft: 'auto' }}>
+          <button className="win-btn hide" onClick={() => window.electronAPI?.windowMinimize()}>
+            <Minus size={14} />
+          </button>
           <button className="win-btn close" onClick={() => window.electronAPI?.windowClose()}>
             <X size={14} />
           </button>

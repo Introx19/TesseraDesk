@@ -169,10 +169,11 @@ By default, plugins are considered "Unverified". To remove the warning screen:
     
     try {
       setShowContactInput(false);
-      const WEBHOOK_URL = 'https://discord.com/api/webhooks/1543757195684880538/yPmvahcq3io1MzeoAE--9NW6vSPVbx8RABsj1LYbBNUaZ5KgaB65m6p8AMdh2D0OgTvh'; 
+      // PROXY URL: Замените 'tesseradesk-backend' на название вашего проекта в Vercel, если оно будет другим
+      const PROXY_URL = 'https://tesseradesk-backend.vercel.app/api/plugin-submit';
       setWebhookStatus({ type: 'success', msg: tr('webhookSending') });
       
-      const res = await window.electronAPI.sendWebhook(WEBHOOK_URL, selectedFile, contactText);
+      const res = await window.electronAPI.sendWebhook(PROXY_URL, selectedFile, contactText);
       
       if (res.success) {
         setWebhookStatus({ type: 'success', msg: tr('webhookSuccess') });

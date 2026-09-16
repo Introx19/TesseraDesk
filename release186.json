@@ -1,0 +1,7 @@
+{
+  "tag_name": "v1.8.6",
+  "name": "v1.8.6 - Math & UI Polish",
+  "body": "## What's New in v1.8.6\n\n🧮 **Math: Integrals & Graphs**\n- **Definite Integrals UI**: New dedicated toggle for Definite Integrals with KaTeX support for rendering beautiful fractions.\n- **Graph Intersections & Extrema**: Hover to easily find intersections and min/max points via snapping.\n\n🌍 **Localization & UI**\n- **SuperHumanizer Translations**: Fully translated interface and EULA prompt.\n- **Glassmorphism Dropdowns**: Revamped native `<select>` dropdowns for a sleeker look.\n- **Taskbar Restoration**: Fixed a bug where minimizing a tool window caused it to disappear from the taskbar.\n\n⚡ **Formulas & Human Typer**\n- **Combinatorics**: New Cheatsheet category for permutation and combination formulas.\n- **Human Typer Fixes**: Resolved hotkeys (`Alt+S`, `Alt+P`) and caching issues.",
+  "draft": true,
+  "prerelease": false
+}

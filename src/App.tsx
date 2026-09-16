@@ -148,10 +148,9 @@ function App() {
 
   useEffect(() => {
     if (window.electronAPI?.onWindowMaximized) {
-      const unsub = window.electronAPI.onWindowMaximized((maximized) => {
+      window.electronAPI.onWindowMaximized((maximized) => {
         setIsMaximized(maximized);
       });
-      return () => unsub();
     }
   }, []);
 
@@ -193,7 +192,7 @@ function App() {
 
   useEffect(() => {
     if (window.electronAPI && window.electronAPI.onFastScreenshotDone) {
-      const unsub = window.electronAPI.onFastScreenshotDone((dataUrl: string) => {
+      window.electronAPI.onFastScreenshotDone((dataUrl: string) => {
         try {
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
           audio.volume = volumeRef.current ? volumeRef.current / 100 : 0.5;

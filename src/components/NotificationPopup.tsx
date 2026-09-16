@@ -12,7 +12,7 @@ export default function NotificationPopup() {
     setBody(decodeURIComponent(params.get('body') || ''));
     
     if (window.electronAPI && window.electronAPI.onNotificationData) {
-      const unsub = window.electronAPI.onNotificationData((data: any) => {
+      window.electronAPI.onNotificationData((data: any) => {
         if (data.title) setTitle(data.title);
         if (data.body) setBody(data.body);
         if (data.image) setImage(data.image);

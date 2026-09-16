@@ -7,11 +7,17 @@ import { Settings2, Plus, Trash2, Maximize2, Activity } from 'lucide-react';
 import nerdamer from 'nerdamer/all.min';
 import { useSettings } from '../../contexts/SettingsContext';
 import { t, type Lang } from '../../i18n/texts';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface AnalysisResult {
   yInt?: string;
   roots?: string[];
   extrema?: string[];
+  mins?: string[];
+  maxs?: string[];
+  intersections?: string[];
+  intersectionsTex?: string[];
   error?: string;
 }
 
@@ -76,6 +82,35 @@ export default function Graphs() {
         // Test it
         compiled.evaluate({ x: 0, e: Math.E, pi: Math.PI });
         
+         let inters: string[] = [];
+         let intersTex: string[] = [];
+         const parseRoots = (raw: string) => {
+           if (raw.startsWith('[') && raw.endsWith(']')) {
+             return raw.slice(1, -1).split(',').filter(r => r && !r.includes('i'));
+           }
+           return [];
+         };
+         
+         prev.slice(0, idx).forEach(otherEq => {
+            if (otherEq.expr && otherEq.expr !== "'") {
+               try {
+                 let intersectionRaw = nerdamer(`solve(${lowerExpr} - (${otherEq.expr.toLowerCase()}), x)`).toString();
+                 let interRoots = parseRoots(intersectionRaw);
+                 interRoots.forEach(ix => {
+                     const iy = nerdamer(lowerExpr, { x: ix }).text();
+                     inters.push(`(${ix}, ${iy})`);
+                     try {
+                        const texIx = nerdamer(ix).toTeX();
+                        const texIy = nerdamer(iy).toTeX();
+                        intersTex.push(`\\left( ${texIx}, ${texIy} \\right)`);
+                     } catch(e) {
+                        intersTex.push(`(${ix}, ${iy})`);
+                     }
+                 });
+               } catch(e) {}
+            }
+         });
+
         let analysis: AnalysisResult | undefined = undefined;
         if (eq.showAnalysis) {
            try {
@@ -83,26 +118,33 @@ export default function Graphs() {
              let rootsRaw = nerdamer(`solve(${lowerExpr}, x)`).toString();
              let diffExpr = nerdamer(`diff(${lowerExpr}, x)`).text();
              let extremaRaw = nerdamer(`solve(${diffExpr}, x)`).toString();
+             let extremas = parseRoots(extremaRaw);
+             let mins: string[] = [];
+             let maxs: string[] = [];
+             let diff2Expr = nerdamer(`diff(${diffExpr}, x)`).text();
              
-             // Extract arrays from "[...]" string output
-             const parseRoots = (raw: string) => {
-               if (raw.startsWith('[') && raw.endsWith(']')) {
-                 return raw.slice(1, -1).split(',').filter(r => r && !r.includes('i'));
-               }
-               return [];
-             };
+             extremas.forEach(ex => {
+                const yVal = nerdamer(lowerExpr, { x: ex }).text();
+                try {
+                  const val2 = nerdamer(diff2Expr, { x: ex }).text();
+                  const numVal = nerdamer(val2).evaluate().text();
+                  if (parseFloat(numVal) > 0) mins.push(`(${ex}, ${yVal})`);
+                  else if (parseFloat(numVal) < 0) maxs.push(`(${ex}, ${yVal})`);
+                  else maxs.push(`(${ex}, ${yVal})`); // Fallback
+                } catch(e) {}
+             });
              
              analysis = {
                yInt: yIntRaw,
                roots: parseRoots(rootsRaw),
-               extrema: parseRoots(extremaRaw).map(ex => {
-                   const yVal = nerdamer(lowerExpr, { x: ex }).text();
-                   return `(${ex}, ${yVal})`;
-               })
+               mins, maxs, intersections: inters, intersectionsTex: intersTex
              };
            } catch (e) {
              analysis = { error: 'Не удается анализировать' };
            }
+        } else if (inters.length > 0) {
+            // Still keep intersections for mouse snapping even if panel is closed
+            analysis = { intersections: inters, intersectionsTex: intersTex };
         }
         
         return { ...eq, compiled, error: undefined, analysis };
@@ -154,15 +196,29 @@ export default function Graphs() {
     else niceStep = 10;
     const gridStep = niceStep * magnitude;
 
+    const hasTrig = equations.some(eq => eq.expr && (eq.expr.includes('sin') || eq.expr.includes('cos') || eq.expr.includes('tan') || eq.expr.includes('pi')));
+    let gridStepX = gridStep;
+    if (hasTrig) {
+        const piMults = [Math.PI/12, Math.PI/6, Math.PI/4, Math.PI/2, Math.PI, Math.PI*2, Math.PI*4];
+        let bestDiff = Infinity;
+        piMults.forEach(pm => {
+            const diff = Math.abs(pm - rawStep);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                gridStepX = pm;
+            }
+        });
+    }
+
     // Draw Grid
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     
     // Vertical grid lines
-    const startX = Math.floor(-centerX / (scale * gridStep)) * gridStep;
-    const endX = Math.ceil((w - centerX) / (scale * gridStep)) * gridStep;
-    for (let i = startX; i <= endX + 1e-9; i += gridStep) {
+    const startX = Math.floor(-centerX / (scale * gridStepX)) * gridStepX;
+    const endX = Math.ceil((w - centerX) / (scale * gridStepX)) * gridStepX;
+    for (let i = startX; i <= endX + 1e-9; i += gridStepX) {
         const x = centerX + i * scale;
         ctx.moveTo(x, 0);
         ctx.lineTo(x, h);
@@ -196,8 +252,27 @@ export default function Graphs() {
     ctx.stroke();
 
     // Format numbers properly, e.g. 0.1 instead of 0.10000000000000001
-    const formatNumber = (num: number) => {
+    const formatNumber = (num: number, isX: boolean) => {
        if (Math.abs(num) < 1e-10) return '0';
+       
+       if (isX && hasTrig) {
+           const piMult = num / Math.PI;
+           // Find a nice fraction
+           const roundDec = Math.round(piMult * 12) / 12; // Supports pi/12
+           if (Math.abs(piMult - roundDec) < 0.01) {
+               if (roundDec === 1) return 'π';
+               if (roundDec === -1) return '-π';
+               if (roundDec === 0.5) return 'π/2';
+               if (roundDec === -0.5) return '-π/2';
+               if (roundDec === 0.25) return 'π/4';
+               if (roundDec === -0.25) return '-π/4';
+               if (roundDec % 1 === 0) return `${roundDec}π`;
+               // Simple fraction generator
+               const d = Math.round(1 / Math.abs(roundDec % 1));
+               const n = Math.abs(Math.round(roundDec * d));
+               if (n > 0) return `${roundDec < 0 ? '-' : ''}${n === 1 ? '' : n}π/${d}`;
+           }
+       }
        return parseFloat(num.toFixed(10)).toString();
     };
 
@@ -205,18 +280,18 @@ export default function Graphs() {
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.font = '10px monospace';
     // Draw x numbers
-    for (let i = startX; i <= endX + 1e-9; i += gridStep) {
+    for (let i = startX; i <= endX + 1e-9; i += gridStepX) {
       if (Math.abs(i) < 1e-10) continue;
       const x = centerX + i * scale;
       const drawY = Math.max(15, Math.min(centerY + 15, h - 5));
-      ctx.fillText(formatNumber(i), x + 3, drawY);
+      ctx.fillText(formatNumber(i, true), x + 3, drawY);
     }
     // Draw y numbers
     for (let i = startY; i <= endY + 1e-9; i += gridStep) {
       if (Math.abs(i) < 1e-10) continue;
       const y = centerY + i * scale;
       const drawX = Math.max(5, Math.min(centerX + 5, w - 20));
-      ctx.fillText(formatNumber(-i), drawX, y - 3);
+      ctx.fillText(formatNumber(-i, false), drawX, y - 3);
     }
 
     // Draw Equations
@@ -289,24 +364,63 @@ export default function Graphs() {
     const centerY = rect.height / 2 + offsetY;
     const mathX = (mouseX - centerX) / scale;
     
+    let exactIntersections: {x: number, y: number}[] = [];
+    equations.forEach(eq => {
+       if (eq.analysis && eq.analysis.intersections) {
+           eq.analysis.intersections.forEach(str => {
+               try {
+                 const parts = str.slice(1, -1).split(',');
+                 if (parts.length === 2) {
+                    const nx = parseFloat(nerdamer(parts[0]).evaluate().text());
+                    const ny = parseFloat(nerdamer(parts[1]).evaluate().text());
+                    if (!isNaN(nx) && !isNaN(ny)) exactIntersections.push({x: nx, y: ny});
+                 }
+               } catch(e) {}
+           });
+       }
+    });
+
+    let intersectionFound = false;
+    exactIntersections.forEach(pt => {
+        const px = centerX + (pt.x * scale);
+        const py = centerY - (pt.y * scale);
+        const dist = Math.hypot(mouseX - px, mouseY - py);
+        if (dist < minDist) {
+            minDist = dist;
+            closestX = px;
+            closestY = py;
+            fText = `(${pt.x.toFixed(2)}, ${pt.y.toFixed(2)})`;
+            fColor = '#fff';
+            found = true;
+            intersectionFound = true;
+        }
+    });
+
+    let points: {x: number, y: number, eq: Equation}[] = [];
     equations.forEach(eq => {
       if (!eq.compiled) return;
       try {
         const mathY = eq.compiled.evaluate({ x: mathX, e: Math.E, pi: Math.PI });
-        if (typeof mathY === 'number' && !isNaN(mathY)) {
-          const py = centerY - (mathY * scale);
-          const dist = Math.abs(mouseY - py);
-          if (dist < minDist) {
-            minDist = dist;
-            closestX = mouseX; // Lock rigidly to X axis of mouse
-            closestY = py;
-            fText = `(${mathX.toFixed(2)}, ${mathY.toFixed(2)})`;
-            fColor = eq.color;
-            found = true;
-          }
+        if (typeof mathY === 'number' && !isNaN(mathY) && isFinite(mathY)) {
+          points.push({ x: mathX, y: mathY, eq });
         }
       } catch (err) {}
     });
+
+    if (!intersectionFound) {
+      points.forEach(pt => {
+        const py = centerY - (pt.y * scale);
+        const dist = Math.abs(mouseY - py);
+        if (dist < minDist) {
+          minDist = dist;
+          closestX = mouseX;
+          closestY = py;
+          fText = `(${pt.x.toFixed(2)}, ${pt.y.toFixed(2)})`;
+          fColor = pt.eq.color;
+          found = true;
+        }
+      });
+    }
 
     if (found) {
       setHoverPos({ px: closestX, py: closestY, text: fText, color: fColor });
@@ -430,9 +544,16 @@ export default function Graphs() {
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <strong style={{ color: 'var(--text-main)', marginBottom: '2px' }}>{t(language as Lang, 'gsolveAnalysis')}</strong>
-                          <div><span style={{ color: '#3b82f6' }}>{t(language as Lang, 'gsolveYint')}</span> {eq.analysis.yInt}</div>
-                          <div><span style={{ color: '#10b981' }}>{t(language as Lang, 'gsolveRoots')}</span> {eq.analysis.roots?.length ? eq.analysis.roots.join(', ') : t(language as Lang, 'gsolveNone')}</div>
-                          <div><span style={{ color: '#8b5cf6' }}>{t(language as Lang, 'gsolveExtrema')}</span> {eq.analysis.extrema?.length ? eq.analysis.extrema.join(', ') : t(language as Lang, 'gsolveNone')}</div>
+                          <div><span style={{ color: '#3b82f6' }}>{t(language as Lang, 'gsolveYint') || 'Y-Int:'}</span> {eq.analysis.yInt}</div>
+                          <div><span style={{ color: '#10b981' }}>{t(language as Lang, 'gsolveRoots') || 'Roots:'}</span> {eq.analysis.roots?.length ? eq.analysis.roots.join(', ') : t(language as Lang, 'gsolveNone') || 'None'}</div>
+                          <div><span style={{ color: '#8b5cf6' }}>{t(language as Lang, 'gsolveExtrema') || 'Minimums:'}</span> {eq.analysis.mins?.length ? eq.analysis.mins.join(', ') : t(language as Lang, 'gsolveNone') || 'None'}</div>
+                          <div><span style={{ color: '#ec4899' }}>{t(language as Lang, 'gsolveMaxs') || 'Maximums:'}</span> {eq.analysis.maxs?.length ? eq.analysis.maxs.join(', ') : t(language as Lang, 'gsolveNone') || 'None'}</div>
+                          {eq.analysis.intersectionsTex && eq.analysis.intersectionsTex.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '5px' }}>
+                               <span style={{ color: '#f59e0b' }}>{t(language as Lang, 'gsolveIntersections') || 'Intersections:'}</span> 
+                               <span dangerouslySetInnerHTML={{ __html: katex.renderToString(eq.analysis.intersectionsTex.join(', '), { displayMode: false, throwOnError: false }) }} />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
