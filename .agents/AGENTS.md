@@ -43,6 +43,10 @@ This file contains the core architecture rules, known bugs, and constraints for 
 - **Constraint**: Global shortcuts block those keys across the entire OS.
 - **Rule**: Only register shortcuts that the user explicitly activated in Settings. Re-register them when `SettingsContext` updates via `window.electronAPI.updateShortcuts()`. Always unregister them when disabling shortcuts.
 
+### E. Бэкенд и main.ts (Распределение логики)
+- **Constraint**: Файл `main.ts` не должен превращаться в свалку кода.
+- **Rule**: НИКОГДА не напихивай все новые фичи и IPC обработчики напрямую в `main.ts`! Вся логика должна быть вынесена в отдельные сервисы в `electron/modules/` (например, `windowManager.ts`, `pluginManager.ts`, `screenshotManager.ts`). `main.ts` должен оставаться тонким слоем оркестрации (app.whenReady и импорт модулей).
+
 ## 4. How to add new DLC / Features
 1. Create a `.tsx` file in `src/components/dlc/`.
 2. Add the toggle state to `SettingsState` in `SettingsContext.tsx`.

@@ -1,18 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { evaluate } from 'mathjs';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { Settings2, History } from 'lucide-react';
 import { t, type Lang } from '../i18n/texts';
 import { useSettings } from '../contexts/SettingsContext';
-
-const formatExpression = (expr: string) => {
-  const stripped = expr.replace(/,/g, '');
-  return stripped.replace(/\b\d+(\.\d+)?\b/g, (match) => {
-    const parts = match.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return parts.join('.');
-  });
-};
+import { formatExpression, evaluateMath } from '../utils/calcHelpers';
 
 export default function Calculator() {
   const { isXs, isSm, width } = useWindowSize();
@@ -75,7 +66,6 @@ export default function Calculator() {
         const rawNewStr = prev.slice(0, start) + num + prev.slice(end);
         const newStr = formatExpression(rawNewStr);
         setTimeout(() => {
-          // Approximate cursor position, it might jump slightly if commas change
           input.setSelectionRange(start + num.length, start + num.length);
           input.focus();
         }, 0);
@@ -86,54 +76,22 @@ export default function Calculator() {
   };
 
   const calculate = () => {
-    try {
-      if (!display.trim()) return;
-      
-      let expr = display;
-      // Убираем запятые, добавленные для форматирования
-      expr = expr.replace(/,/g, '');
-      expr = expr.replace(/√/g, 'sqrt');
-      expr = expr.replace(/π/g, 'pi');
-      expr = expr.replace(/h/g, '(6.62607015e-34)');
-      expr = expr.replace(/c/g, '(299792458)');
-      
-      let scope: any = {};
-      if (!isRadians) {
-        scope = {
-          sin: (x: any) => Math.sin(Number(x) * Math.PI / 180),
-          cos: (x: any) => Math.cos(Number(x) * Math.PI / 180),
-          tan: (x: any) => Math.tan(Number(x) * Math.PI / 180),
-          asin: (x: any) => Math.asin(Number(x)) * 180 / Math.PI,
-          acos: (x: any) => Math.acos(Number(x)) * 180 / Math.PI,
-          atan: (x: any) => Math.atan(Number(x)) * 180 / Math.PI
-        };
-      }
-
-      const rawResult = String(evaluate(expr, scope));
-      
-      // Форматируем результат с запятыми (напр. 6000000 -> 6,000,000)
-      let formattedResult = rawResult;
-      const numResult = Number(rawResult);
-      if (!isNaN(numResult) && rawResult !== 'Infinity' && rawResult !== '-Infinity') {
-        const parts = rawResult.split('.');
-        parts[0] = Number(parts[0]).toLocaleString('en-US');
-        formattedResult = parts.join('.');
-      }
-
-      setHistory(prev => {
-        const newHist = [`${display} = ${formattedResult}`, ...prev].slice(0, 10);
-        return newHist;
-      });
+    if (!display.trim()) return;
+    const { formattedResult, isError } = evaluateMath(display, isRadians);
+    
+    if (isError) {
+      setDisplay('Error');
+    } else {
+      setHistory(prev => [`${display} = ${formattedResult}`, ...prev].slice(0, 10));
       setDisplay(formattedResult);
       setJustCalculated(true);
       setTimeout(() => {
         inputRef.current?.setSelectionRange(formattedResult.length, formattedResult.length);
         inputRef.current?.focus();
       }, 0);
-    } catch {
-      setDisplay('Error');
     }
   };
+
 
   const clear = () => setDisplay('0');
 

@@ -5,3 +5,7 @@ release/
 .env
 *.env
 translateData.cjs
+
+# AI Agent working directories
+scratch/
+release*.json

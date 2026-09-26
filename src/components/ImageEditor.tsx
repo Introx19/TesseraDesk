@@ -280,11 +280,13 @@ export default function ImageEditor() {
       });
     };
 
+    let cleanupScreenshot: (() => void) | undefined;
+    let cleanupAddLayer: (() => void) | undefined;
     if (window.electronAPI) {
-      window.electronAPI.onScreenshotData(dataUrl => {
+      cleanupScreenshot = window.electronAPI.onScreenshotData(dataUrl => {
         if (dataUrl) addImageLayer(dataUrl);
       });
-      window.electronAPI.onAddScreenshotLayer(dataUrl => {
+      cleanupAddLayer = window.electronAPI.onAddScreenshotLayer(dataUrl => {
         if (dataUrl) addImageLayer(dataUrl);
       });
       window.electronAPI.requestScreenshotData?.();
@@ -305,7 +307,11 @@ export default function ImageEditor() {
       }
     };
     window.addEventListener('paste', onPaste);
-    return () => window.removeEventListener('paste', onPaste);
+    return () => {
+      window.removeEventListener('paste', onPaste);
+      if (cleanupScreenshot) cleanupScreenshot();
+      if (cleanupAddLayer) cleanupAddLayer();
+    };
   }, [saveHistory]);
 
   // ─── Canvas init ──────────────────────────────────────────────────────

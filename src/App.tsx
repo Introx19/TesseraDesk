@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Timer as TimerIcon, Hourglass, Calculator as CalculatorIcon, List, Pin, X, Minus, Square, Scissors, Palette, PanelLeftClose, PanelRightClose, Settings as SettingsIcon, Droplet, Moon, ExternalLink, StickyNote, ChevronsUp, FlaskConical, LineChart, BookOpen, FunctionSquare, Scale, Globe, ChevronDown, Terminal, MousePointerClick, Coins, LayoutGrid, Keyboard, Sparkles, Code2 } from 'lucide-react';
+import { Pin, X, Minus, Square, PanelLeftClose, PanelRightClose, ExternalLink } from 'lucide-react';
 import Stopwatch from './components/Stopwatch';
 import MiniTimer from './components/MiniTimer';
 import Reminders from './components/Reminders';
@@ -29,28 +29,12 @@ import ScreenshotPreview from './components/ScreenshotPreview';
 import Onboarding from './components/Onboarding';
 import WhatsNewModal, { checkWhatsNew } from './components/WhatsNewModal';
 import SplashAnimation from './components/SplashAnimation';
+import Sidebar from './components/Sidebar';
 import { useSettings } from './contexts/SettingsContext';
 import { useModal } from './contexts/ModalContext';
-import { t, type Lang } from './i18n/texts';
+import { getToolConfig } from './config/toolsRegistry';
 
 function App() {
-  const opacityMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (opacityMenuRef.current && !opacityMenuRef.current.contains(event.target as Node)) {
-        const navOpacity = document.getElementById('nav-opacity');
-        if (navOpacity && navOpacity.contains(event.target as Node)) {
-          return;
-        }
-        setShowOpacitySlider(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
 
   const [activeTab, setActiveTab] = useState<'stopwatch' | 'minitimer' | 'reminders' | 'calc' | 'tasks' | 'notes' | 'settings' | 'store' | 'periodicTable' | 'desmos' | 'formulas' | 'integrals' | 'converter' | 'worldClock' | 'devTools' | 'autoclicker' | 'numismatics' | 'humanTyper' | 'superHumanizer' | 'creatorStudio' | 'library'>('stopwatch');
@@ -60,11 +44,8 @@ function App() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [miniAnimating, setMiniAnimating] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const [updateReadyInfo, setUpdateReadyInfo] = useState<{ version: string } | null>(null);
+
   const [plugins, setPlugins] = useState<any[]>([]);
-  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const dragStarted = useRef<boolean>(false);
 
   const refreshPlugins = () => {
     if (window.electronAPI?.getPlugins) {
@@ -87,7 +68,7 @@ function App() {
     return !!sessionStorage.getItem('splashPlayed');
   });
 
-  const { language, activeTools, pinnedTools, pinnedOrder, dndMode, bgOpacity, multiScreenshot, fastScreenshot, screenshotDelay, saveFastScreenshotDisk, volume, updateSettings, oledProtection, customScreenshotFolder } = useSettings();
+  const { language, activeTools, pinnedTools, pinnedOrder, multiScreenshot, fastScreenshot, screenshotDelay, saveFastScreenshotDisk, volume, oledProtection, customScreenshotFolder } = useSettings();
 
   useEffect(() => {
     let itemCount = 0;
@@ -109,32 +90,11 @@ function App() {
     if (activeTools.screenshot) itemCount++;
     if (activeTools.paint) itemCount++;
 
-    const toolMinSizes: Record<string, {width: number, height: number}> = {
-      periodicTable: { width: 1000, height: 700 },
-      superHumanizer: { width: 800, height: 500 },
-      desmos: { width: 600, height: 500 },
-      humanTyper: { width: 500, height: 400 },
-      paint: { width: 800, height: 600 },
-      'image-editor': { width: 800, height: 600 },
-      notes: { width: 400, height: 300 },
-      tasks: { width: 400, height: 400 },
-      library: { width: 600, height: 500 },
-      settings: { width: 500, height: 500 },
-      converter: { width: 400, height: 500 },
-      formulas: { width: 600, height: 500 },
-      integrals: { width: 600, height: 500 },
-      worldClock: { width: 500, height: 400 },
-      devTools: { width: 1000, height: 700 },
-      autoclicker: { width: 400, height: 500 },
-      numismatics: { width: 600, height: 500 },
-      reminders: { width: 400, height: 400 },
-      calc: { width: 350, height: 450 },
-    };
-    const size = toolMinSizes[activeTab];
-    if (size && window.electronAPI?.ensureMinimumSize) {
+    const size = getToolConfig(activeTab)?.minSize;
+    if (size && window.electronAPI?.ensureMinimumSize && !isCompact) {
       window.electronAPI.ensureMinimumSize(size.width, size.height);
     }
-  }, [activeTab, activeTools]);
+  }, [activeTab, activeTools, isCompact]);
 
   useEffect(() => {
     if (!window.location.hash && checkWhatsNew()) {
@@ -147,29 +107,24 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let cleanupFn: (() => void) | undefined;
     if (window.electronAPI?.onWindowMaximized) {
-      window.electronAPI.onWindowMaximized((maximized) => {
+      cleanupFn = window.electronAPI.onWindowMaximized((maximized) => {
         setIsMaximized(maximized);
       });
     }
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
   }, []);
 
-  useEffect(() => {
-    if (window.electronAPI?.onUpdateDownloaded) {
-      const unsub = window.electronAPI.onUpdateDownloaded((info: any) => {
-        setUpdateReadyInfo(info);
-      });
-      return () => {
-        if (unsub) unsub();
-      };
-    }
-  }, []);
+
 
   const [isOpaque, setIsOpaque] = useState(() => {
     return localStorage.getItem('tesseradesk-opaque') === 'true';
   });
 
-  const [showOpacitySlider, setShowOpacitySlider] = useState(false);
+
   const [oledOffset, setOledOffset] = useState({ x: 0, y: 0 });
 
 
@@ -191,8 +146,9 @@ function App() {
   useEffect(() => { volumeRef.current = volume; }, [volume]);
 
   useEffect(() => {
+    let cleanupFn: (() => void) | undefined;
     if (window.electronAPI && window.electronAPI.onFastScreenshotDone) {
-      window.electronAPI.onFastScreenshotDone((dataUrl: string) => {
+      cleanupFn = window.electronAPI.onFastScreenshotDone((dataUrl: string) => {
         try {
           const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
           audio.volume = volumeRef.current ? volumeRef.current / 100 : 0.5;
@@ -201,6 +157,9 @@ function App() {
         window.electronAPI.showNotification('Скриншот сделан', 'Скриншот сохранен и скопирован в буфер обмена', dataUrl);
       });
     }
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
   }, []);
 
   useEffect(() => {
@@ -214,29 +173,11 @@ function App() {
 
   useEffect(() => {
     if (hash) {
-      const toolId = hash.replace('#', '');
-      const toolMinSizes: Record<string, {width: number, height: number}> = {
-        periodicTable: { width: 1000, height: 700 },
-        superHumanizer: { width: 800, height: 500 },
-        desmos: { width: 600, height: 500 },
-        humanTyper: { width: 500, height: 400 },
-        paint: { width: 800, height: 600 },
-        'image-editor': { width: 800, height: 600 },
-        notes: { width: 400, height: 300 },
-        tasks: { width: 400, height: 400 },
-        library: { width: 600, height: 500 },
-        settings: { width: 500, height: 500 },
-        converter: { width: 400, height: 500 },
-        formulas: { width: 600, height: 500 },
-        integrals: { width: 600, height: 500 },
-        worldClock: { width: 500, height: 400 },
-        devTools: { width: 1000, height: 700 },
-        autoclicker: { width: 400, height: 500 },
-        numismatics: { width: 600, height: 500 },
-        reminders: { width: 400, height: 400 },
-        calc: { width: 350, height: 450 },
-      };
-      const size = toolMinSizes[toolId];
+      const toolId = hash.replace('#', '').replace(/^\//, ''); // Handle both #/tool and #tool
+      let size = getToolConfig(toolId)?.minSize;
+      if (!size && toolId.startsWith('plugin-')) {
+        size = { width: 400, height: 500 };
+      }
       if (size && window.electronAPI?.ensureMinimumSize) {
         window.electronAPI.ensureMinimumSize(size.width, size.height);
       }
@@ -351,7 +292,7 @@ function App() {
     setIsMini(false);
     
     const pinnedCount = pinnedOrder ? pinnedOrder.filter(id => pinnedTools?.[id]).length : 0;
-    const height = Math.max(380, 20 + 16 + (Math.max(pinnedCount, 4) * 38) + 120);
+    const height = Math.max(380, 20 + 16 + (Math.max(pinnedCount, 4) * 38) + 160);
 
     if (window.electronAPI) {
         // @ts-ignore (we know height is passed but just in case)
@@ -419,46 +360,10 @@ function App() {
     )}
     <Onboarding />
     {showWhatsNew && !showSplash && <WhatsNewModal onClose={() => setShowWhatsNew(false)} />}
-    {updateReadyInfo && (
-      <div style={{
-        position: 'fixed',
-        top: '12px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 99999,
-        background: 'var(--bg-card)',
-        border: '1px solid var(--accent)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 12px var(--accent-glow)',
-        borderRadius: '10px',
-        padding: '8px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        backdropFilter: 'blur(16px)',
-        animation: 'fadeIn 0.3s ease'
-      }}>
-        <span style={{ fontSize: '0.9em', fontWeight: 'bold', color: 'var(--text-main)' }}>
-          🚀 {language === 'ru' ? `Доступно обновление v${updateReadyInfo.version}!` : `TesseraDesk v${updateReadyInfo.version} is ready!`}
-        </span>
-        <button 
-          className="btn btn-primary" 
-          style={{ padding: '4px 12px', fontSize: '0.85em' }}
-          onClick={() => window.electronAPI?.installUpdate()}
-        >
-          {language === 'ru' ? 'Перезапустить' : 'Restart now'}
-        </button>
-        <button 
-          className="win-btn close" 
-          style={{ padding: '2px', cursor: 'pointer' }}
-          onClick={() => setUpdateReadyInfo(null)}
-        >
-          <X size={14} />
-        </button>
-      </div>
-    )}
+
     <div className="app-container" style={{ 
       flexDirection: isCompact ? 'column' : 'row', 
-      height: (isCompact && !isMini) ? 'auto' : '100vh',
+      height: '100vh',
       borderRadius: isMaximized ? '0px' : (isCompact && isMini) ? '20px' : '12px',
       transform: `translate(${oledOffset.x}px, ${oledOffset.y}px)`,
       transition: 'transform 1s ease',
@@ -531,266 +436,20 @@ function App() {
       )}
 
       {(!isCompact || !isMini) && (
-        <div 
-          className={`sidebar ${isCompact ? 'compact-sidebar' : ''} ${miniAnimating ? 'mini-animating' : ''}`} 
-          style={{ 
-            width: isCompact ? '100%' : '60px', 
-            height: isCompact ? 'auto' : '100vh', 
-            padding: isCompact ? '8px 5px' : '45px 0 15px 0',
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center',
-            flexShrink: 0,
-            overflowY: isCompact ? 'hidden' : 'overlay',
-            overflowX: 'hidden'
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const toolId = e.dataTransfer.getData('text/plain');
-            if (toolId && activeTools[toolId as keyof typeof activeTools]) {
-              if (!pinnedTools[toolId]) {
-                updateSettings({
-                  pinnedTools: {
-                    ...pinnedTools,
-                    [toolId]: true
-                  },
-                  pinnedOrder: [...pinnedOrder, toolId]
-                });
-              }
-            }
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center', flexShrink: 0 }}>
-            {isCompact && !isMini && (
-              <button
-                className="compact-mini-btn"
-                onClick={toggleMini}
-                title="Свернуть в квадратик"
-              >
-                <ChevronsUp size={13} />
-              </button>
-            )}
-
-            <div id="nav-library" className={`nav-item ${activeTab === 'library' && !isCompact ? 'active' : ''}`} onClick={() => openToolOption('library')} title={language === 'ru' ? 'Библиотека DLC' : 'DLC Library'}><LayoutGrid size={20} /></div>
-            <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px auto' }}></div>
-          </div>
-          
-          <div className="custom-scrollbar" style={{ flex: 1, overflowY: isCompact ? 'hidden' : 'overlay', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center' }}>
-            {pinnedOrder.filter(id => id !== 'screenshot' && id !== 'paint').map(toolId => {
-              // Plugin tools (plugin-xxx) are tracked by plugins array, not activeTools
-              // creatorStudio is also a DLC tool
-              const isPluginTool = toolId.startsWith('plugin-');
-              const isCreatorStudio = toolId === 'creatorStudio';
-              const isActiveTool = isPluginTool || isCreatorStudio || (activeTools as any)[toolId];
-              if (!isActiveTool || !pinnedTools[toolId]) return null;
-
-              const isActive = activeTab === toolId && !isCompact;
-              let IconComponent: any = null;
-              let title = '';
-              let onClickAction = () => openToolOption(toolId);
-
-              if (toolId.startsWith('plugin-')) {
-                const p = plugins.find(x => x.id === toolId.replace('plugin-', ''));
-                if (p) {
-                  IconComponent = LayoutGrid;
-                  title = p.name;
-                }
-              } else {
-                switch(toolId) {
-                  case 'stopwatch': IconComponent = TimerIcon; title = t(language as Lang, 'stopwatch'); break;
-                  case 'minitimer': IconComponent = Hourglass; title = t(language as Lang, 'minitimer'); break;
-                  case 'reminders': IconComponent = Pin; title = t(language as Lang, 'reminders'); break;
-                  case 'calc': IconComponent = CalculatorIcon; title = t(language as Lang, 'calc'); break;
-                  case 'tasks': IconComponent = List; title = t(language as Lang, 'tasks'); break;
-                  case 'notes': IconComponent = StickyNote; title = t(language as Lang, 'notes'); break;
-                  case 'periodicTable': IconComponent = FlaskConical; title = t(language as Lang, 'periodicTable'); break;
-                  case 'desmos': IconComponent = LineChart; title = t(language as Lang, 'desmos'); break;
-                  case 'formulas': IconComponent = BookOpen; title = t(language as Lang, 'formulas'); break;
-                  case 'integrals': IconComponent = FunctionSquare; title = t(language as Lang, 'integrals'); break;
-                  case 'converter': IconComponent = Scale; title = t(language as Lang, 'converter'); break;
-                  case 'worldClock': IconComponent = Globe; title = t(language as Lang, 'dlc_worldClock_name' as any); break;
-                  case 'devTools': IconComponent = Terminal; title = t(language as Lang, 'dlc_devTools_name' as any); break;
-                  case 'autoclicker': IconComponent = MousePointerClick; title = t(language as Lang, 'autoclicker'); break;
-                  case 'numismatics': IconComponent = Coins; title = t(language as Lang, 'numismatics_title' as any) || 'Numismatics'; break;
-                  case 'humanTyper': IconComponent = Keyboard; title = 'Human Typer'; break;
-                  case 'superHumanizer': IconComponent = Sparkles; title = 'Super Humanizer'; break;
-                  case 'creatorStudio': IconComponent = Code2; title = 'Creator Studio'; break;
-                  case 'screenshot': IconComponent = Scissors; title = t(language as Lang, 'screenshot'); onClickAction = takeScreenshot; break;
-                  case 'paint': IconComponent = Palette; title = t(language as Lang, 'paint'); onClickAction = openPaint; break;
-                }
-              }
-
-              if (!IconComponent) return null;
-
-              return (
-                <div key={toolId} style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                  {dragOverTarget === toolId && (
-                    <div style={{ position: 'absolute', top: -3, left: '20%', right: '20%', height: '2px', background: 'var(--accent)', borderRadius: '2px', zIndex: 10, boxShadow: '0 0 5px var(--accent)' }}></div>
-                  )}
-                  <div 
-                    id={`nav-${toolId}`} 
-                    className={`nav-item ${isActive ? 'active' : ''} ${draggingId === toolId ? 'dragging' : ''}`} 
-                    onClick={onClickAction} 
-                    title={title}
-                    draggable
-                    onDragStart={(e) => {
-                      dragStarted.current = true;
-                      setDraggingId(toolId);
-                      e.dataTransfer.setData('text/plain', toolId);
-                      e.dataTransfer.effectAllowed = 'move';
-                      // Transparent ghost image
-                      const ghost = document.createElement('div');
-                      ghost.style.cssText = 'width:36px;height:36px;background:var(--accent);opacity:0.5;border-radius:10px;position:fixed;top:-100px';
-                      document.body.appendChild(ghost);
-                      e.dataTransfer.setDragImage(ghost, 18, 18);
-                      setTimeout(() => document.body.removeChild(ghost), 0);
-                    }}
-                    onDragEnd={() => {
-                      setDraggingId(null);
-                      setDragOverTarget(null);
-                      dragStarted.current = false;
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      if (dragStarted.current) setDragOverTarget(toolId);
-                    }}
-                    onDragLeave={() => {
-                      if (dragOverTarget === toolId) setDragOverTarget(null);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDragOverTarget(null);
-                      const sourceId = e.dataTransfer.getData('text/plain');
-                      if (sourceId && sourceId !== toolId && activeTools[sourceId as keyof typeof activeTools]) {
-                        const newOrder = [...pinnedOrder];
-                        
-                        // If it's not pinned yet, add it
-                        if (!pinnedTools[sourceId]) {
-                          const targetIndex = newOrder.indexOf(toolId);
-                          if (targetIndex > -1) {
-                            newOrder.splice(targetIndex, 0, sourceId);
-                          } else {
-                            newOrder.push(sourceId);
-                          }
-                          updateSettings({
-                            pinnedTools: { ...pinnedTools, [sourceId]: true },
-                            pinnedOrder: newOrder
-                          });
-                        } else {
-                          // Reordering
-                          const sourceIndex = newOrder.indexOf(sourceId);
-                          const targetIndex = newOrder.indexOf(toolId);
-                          if (sourceIndex > -1 && targetIndex > -1) {
-                            newOrder.splice(sourceIndex, 1);
-                            newOrder.splice(targetIndex, 0, sourceId);
-                            updateSettings({ pinnedOrder: newOrder });
-                          }
-                        }
-                      }
-                    }}
-                  >
-                    <IconComponent size={18} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', alignItems: 'center', flexShrink: 0, marginTop: 'auto' }}>
-            {/* Utility Tools separated by a line */}
-            {( (activeTools.screenshot && pinnedTools.screenshot) || (activeTools.paint && pinnedTools.paint) ) && (
-              <>
-                <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px 0' }}></div>
-                {(activeTools.screenshot && pinnedTools.screenshot) && (
-                  <div key="screenshot" style={{ width: '100%', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                    <div id="nav-screenshot" className={`nav-item ${(activeTab as string) === 'screenshot' ? 'active' : ''}`} onClick={takeScreenshot} title={t(language as Lang, 'screenshot')}>
-                      <Scissors size={18} />
-                    </div>
-                  </div>
-                )}
-                {(activeTools.paint && pinnedTools.paint) && (
-                  <div key="paint" style={{ width: '100%', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                    <div id="nav-paint" className={`nav-item ${(activeTab as string) === 'paint' ? 'active' : ''}`} onClick={openPaint} title={t(language as Lang, 'paint')}>
-                      <Palette size={18} />
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {!isCompact && (
-              <>
-                <div style={{ width: '30px', height: '1px', background: 'var(--glass-border)', margin: '5px 0' }}></div>
-                <div id="nav-dnd" className={`nav-item ${dndMode ? 'active' : ''}`} style={{ flexShrink: 0 }} onClick={() => updateSettings({ dndMode: !dndMode })} title={dndMode ? t(language as Lang, 'dndOn') : t(language as Lang, 'dndOff')}><Moon size={18} /></div>
-                
-                <div style={{ position: 'relative' }}>
-                  <div 
-                    id="nav-opacity"
-                    className={`nav-item ${isOpaque ? 'active' : ''}`} 
-                    onClick={() => setIsOpaque(!isOpaque)} 
-                    onContextMenu={(e) => { e.preventDefault(); setShowOpacitySlider(!showOpacitySlider); }}
-                    title={t(language as Lang, 'opacity')}
-                    style={{ position: 'relative', flexShrink: 0 }}
-                  >
-                    <Droplet size={20} />
-                    <ChevronDown size={12} style={{ position: 'absolute', right: '2px', bottom: '2px', opacity: 0.7 }} />
-                  </div>
-                  
-                  {showOpacitySlider && !isCompact && (
-                    <div ref={opacityMenuRef} style={{
-                      position: 'fixed', left: '70px', bottom: '80px',
-                      background: 'var(--bg-card)', padding: '10px', borderRadius: 8,
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.2)', zIndex: 100, minWidth: 150,
-                      border: '1px solid var(--glass-border)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                        <span style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>{t(language as Lang, 'opacity')}</span>
-                        <span style={{fontSize: '0.8em', color: 'var(--accent)'}}>{Math.round(bgOpacity * 100)}%</span>
-                      </div>
-                      <input 
-                        type="range" 
-                        min="20" max="100" 
-                        value={Math.round(bgOpacity * 100)} 
-                        onChange={e => updateSettings({ bgOpacity: parseInt(e.target.value) / 100 })} 
-                        style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                <div id="nav-settings" className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} style={{ flexShrink: 0 }} onClick={() => setActiveTab('settings')} title={t(language as Lang, 'settings')}><SettingsIcon size={20} /></div>
-              </>
-            )}
-          </div>
-
-          {isCompact && (
-            <div style={{
-              flexShrink: 0,
-              width: '100%',
-              padding: '8px 0 10px',
-              marginTop: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              background: 'transparent',
-              borderTop: '1px solid var(--glass-border)'
-            }}>
-              <button className="win-btn" onClick={toggleCompact} title={t(language as Lang, 'expand')} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <PanelRightClose size={16} />
-              </button>
-              <button className="win-btn minimize" onClick={() => window.electronAPI?.windowMinimize()} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Minimize">
-                <Minus size={14} />
-              </button>
-              <button className="win-btn close" onClick={() => window.electronAPI?.windowClose()} style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={t(language as Lang, 'close')}>
-                <X size={14} />
-              </button>
-            </div>
-          )}
-        </div>
+        <Sidebar 
+          isCompact={isCompact} 
+          isMini={isMini} 
+          miniAnimating={miniAnimating} 
+          activeTab={activeTab} 
+          plugins={plugins} 
+          openToolOption={openToolOption} 
+          toggleMini={toggleMini} 
+          toggleCompact={toggleCompact} 
+          takeScreenshot={takeScreenshot} 
+          openPaint={openPaint} 
+          isOpaque={isOpaque} 
+          setIsOpaque={setIsOpaque} 
+        />
       )}
 
 

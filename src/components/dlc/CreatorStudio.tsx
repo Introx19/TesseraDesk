@@ -85,10 +85,10 @@ A plugin is installed from a .zip archive. The root of the archive (NOT inside a
 
 3. WIDGET SCRIPT (index.js) & API
 CRITICAL RULES FOR AI AND DEVELOPERS:
-- NO NATIVE JSX: The file is executed directly in a browser environment. Standard browsers do NOT support JSX syntax. You MUST either use 'React.createElement' or transpile your code before zipping.
-- NO REACT IMPORTS: Do NOT use "import React from 'react';". React and its hooks (useState, useEffect) are already injected into the global window scope.
-- NO NODE.JS: Do NOT use Node.js modules (fs, path). The plugin runs in a sandboxed renderer.
-- MODULE FORMAT: You must use standard ES Module syntax and export your React component as default.
+- PLUGIN SANDBOX: The plugin runs in an isolated iframe. You CANNOT access \`window\`, \`localStorage\`, or the host DOM.
+- NO HOST REACT: You must bundle React/React-DOM into your plugin if you use it (via Vite). The host app no longer provides React globally.
+- MODULE FORMAT: You must use standard ES Module syntax and export a \`mount\` function.
+- NO NODE.JS: Do NOT use Node.js modules (fs, path).
 
 CONTEXT API TYPE DEFINITION:
 type PluginContext = {
@@ -96,30 +96,31 @@ type PluginContext = {
   language: 'ru' | 'en';
   writeTextToClipboard: (text: string) => Promise<boolean>;
   readTextFromClipboard: () => Promise<string>;
-  openExternal: (url: string) => void;
-  t: (key: string) => string;
+  openExternal: (url: string) => Promise<boolean>;
 };
 
-// Example index.js (Without JSX, safe for direct execution):
-export default function MyWidget({ context }) {
-  const { useState, createElement } = React;
+// Example src/main.tsx (Needs to be built with Vite):
+import { createRoot } from 'react-dom/client';
+import React, { useState } from 'react';
+
+function MyWidget({ context }) {
   const [count, setCount] = useState(0);
 
-  return createElement('div', { 
-      className: \`p-4 h-full \${context.theme === 'dark' ? 'text-white' : 'text-black'}\`
-    },
-    createElement('h2', { className: 'text-xl font-bold mb-2' }, 'My Widget'),
-    createElement('p', { className: 'mb-4' }, \`Current language: \${context.language}\`),
-    createElement('button', {
-      onClick: () => setCount(c => c + 1),
-      className: 'px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg mb-2 transition-colors'
-    }, \`Count: \${count}\`),
-    createElement('br'),
-    createElement('button', {
-      onClick: () => context.writeTextToClipboard('Text from plugin!'),
-      className: 'px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors'
-    }, 'Copy Text to Clipboard')
+  return (
+    <div className={\`p-4 h-full \${context.theme === 'dark' ? 'text-white' : 'text-black'}\`}>
+      <h2 className="text-xl font-bold mb-2">My Widget</h2>
+      <p className="mb-4">Language: {context.language}</p>
+      <button onClick={() => setCount(c => c + 1)} className="px-4 py-2 bg-blue-500 text-white rounded mb-2">Count: {count}</button><br/>
+      <button onClick={() => context.writeTextToClipboard('Text!')} className="px-4 py-2 bg-gray-600 text-white rounded">Copy Text</button>
+    </div>
   );
+}
+
+export function mount(container, context) {
+  const root = createRoot(container);
+  root.render(<MyWidget context={context} />);
+  window.onContextUpdate = (newContext) => root.render(<MyWidget context={newContext} />);
+  return () => root.unmount();
 }
 
 4. STYLING (style.css & Tailwind)

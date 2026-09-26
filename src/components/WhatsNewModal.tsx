@@ -1,19 +1,17 @@
 import { X, Sparkles } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
-const CURRENT_VERSION = '1.8.6';
+const CURRENT_VERSION = '1.8.8';
 
 export default function WhatsNewModal({ onClose }: { onClose: () => void }) {
   const { language } = useSettings();
   
   const items = language === 'ru' ? [
-    { icon: '🧮', title: 'Математика: Интегралы и Графики', desc: 'Удобный интерфейс определенных интегралов (с поддержкой KaTeX) и нахождение точек пересечений и экстремумов на графиках.' },
-    { icon: '🌍', title: 'Локализация и UI', desc: 'Полный перевод SuperHumanizer на английский, красивые выпадающие списки (Dropdown) и фикс бага со скрытием в панель задач.' },
-    { icon: '⚡', title: 'Шпаргалки и Human Typer', desc: 'Добавлена комбинаторика в шпаргалки, а также исправлены хоткеи и кэширование текста в Human Typer.' },
+    { icon: '📁', title: 'Папки в библиотеке', desc: 'Новая возможность: теперь можно создавать папки и организовывать свои инструменты с помощью перетаскивания (Drag-and-Drop)!' },
+    { icon: '⚙️', title: 'Масштабный рефакторинг', desc: 'Мы провели серьезный рефакторинг ядра (и написали кучу тестов!). Из-за этого могли возникнуть некоторые баги. Если найдете проблему — пожалуйста, напишите баг-репорт. Спасибо за понимание ≽^⎚⩊⎚^≼' },
   ] : [
-    { icon: '🧮', title: 'Math: Integrals & Graphs', desc: 'New definite integrals UI (with KaTeX support) and intersection/extrema finding for graphs.' },
-    { icon: '🌍', title: 'Localization & UI', desc: 'Full English translation for SuperHumanizer, beautiful custom dropdowns, and taskbar window restore fixes.' },
-    { icon: '⚡', title: 'Formulas & Human Typer', desc: 'Added combinatorics to formulas, fixed text caching and hotkeys in Human Typer.' },
+    { icon: '📁', title: 'Library Folders', desc: 'New feature: You can now create folders in the library and organize your widgets using Drag-and-Drop!' },
+    { icon: '⚙️', title: 'Massive Refactoring', desc: 'We did a major core refactoring (and added many tests!). There might be some bugs as a result. If you find any issues, please submit a bug report. Thanks for understanding ≽^⎚⩊⎚^≼' },
   ];
 
   return (

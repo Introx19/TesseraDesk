@@ -11,14 +11,18 @@ export default function NotificationPopup() {
     setTitle(decodeURIComponent(params.get('title') || 'Уведомление'));
     setBody(decodeURIComponent(params.get('body') || ''));
     
+    let cleanupFn: (() => void) | undefined;
     if (window.electronAPI && window.electronAPI.onNotificationData) {
-      window.electronAPI.onNotificationData((data: any) => {
+      cleanupFn = window.electronAPI.onNotificationData((data: any) => {
         if (data.title) setTitle(data.title);
         if (data.body) setBody(data.body);
         if (data.image) setImage(data.image);
       });
       window.electronAPI.requestNotificationData?.();
     }
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
   }, []);
 
   return (

@@ -29,12 +29,16 @@ export default function AutoClicker() {
   }, [autoclickerHotkey]);
 
   useEffect(() => {
+    let cleanupFn: (() => void) | undefined;
     const handleStateChange = (active: boolean) => {
       setIsActive(active);
     };
     if (window.electronAPI?.onAutoclickerStateChanged) {
-      window.electronAPI.onAutoclickerStateChanged(handleStateChange);
+      cleanupFn = window.electronAPI.onAutoclickerStateChanged(handleStateChange);
     }
+    return () => {
+      if (cleanupFn) cleanupFn();
+    };
   }, []);
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import { 
   Settings, Sparkles, RefreshCw, CheckCircle2, AlertTriangle, 
   Copy, Check, Globe, FileText, Bot, 
-  EyeOff, Key, Play, ExternalLink, X, HelpCircle, Scale
+  EyeOff, Key, Play, ExternalLink, X, HelpCircle, Scale, Trash2
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import InfoButton from '../InfoButton';
@@ -38,6 +38,8 @@ const SuperHumanizer = () => {
   const [leftTab, setLeftTab] = useState<'text' | 'analysis'>('text');
   const [strictLength, setStrictLength] = useState(false);
   const [copiedAnalysis, setCopiedAnalysis] = useState(false);
+  const [actionLogs, setActionLogs] = useState<string[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
   
   const [isDisguised, setIsDisguised] = useState(false);
   const [panicHotkey, setPanicHotkey] = useState(globalPanicHotkey || 'F9');
@@ -134,11 +136,14 @@ const SuperHumanizer = () => {
       const res = await window.electronAPI.analyzeText({ text, context, useWebSearch });
       if (res.error) {
         setAnalysisResult('❌ ' + res.error);
+        if (res.logs) setActionLogs(prev => [...prev, ...res.logs]);
       } else {
         setAnalysisResult(res.result || '');
+        if (res.logs) setActionLogs(prev => [...prev, ...res.logs]);
       }
     } catch (e: any) {
       setAnalysisResult('❌ Ошибка при анализе. Проверьте API ключ и подключение к интернету.');
+      setActionLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ❌ Unknown Error: ${e.message}`]);
     }
     setIsAnalyzing(false);
   };
@@ -168,20 +173,25 @@ const SuperHumanizer = () => {
         additionalInstructions: instructions,
         context,
         useWebSearch,
-        strictLength
+        strictLength,
+        model
       });
       if (res.error) {
         setResult(t(superHumanizerLanguage || 'ru', 'shErrorPrefix') + res.error);
+        if (res.logs) setActionLogs(prev => [...prev, ...res.logs]);
       } else {
         const resultText = res.result || '';
         setResult(resultText);
+        if (res.logs) setActionLogs(prev => [...prev, ...res.logs]);
+        
         // Show word count difference
         const originalWc = wordCount(text);
         const resultWc = wordCount(resultText);
         setWordDiff(resultWc - originalWc);
       }
     } catch (e: any) {
-      setResult(t(superHumanizerLanguage || 'ru', 'shErrorGeneral'));
+      setResult(t(superHumanizerLanguage || 'ru', 'shErrorGeneral') + (e.message || ''));
+      setActionLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ❌ Unknown Error: ${e.message}`]);
     }
     setIsHumanizing(false);
   };
@@ -275,6 +285,14 @@ const SuperHumanizer = () => {
           }}>v{SH_VERSION}</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button 
+            className="icon-btn"
+            onClick={() => setShowLogs(true)}
+            title="Логи моделей (API Logs)"
+            style={{ padding: '6px' }}
+          >
+            <FileText size={16} />
+          </button>
           <button 
             className="icon-btn"
             onClick={() => setIsDisguised(true)}
@@ -652,7 +670,7 @@ const SuperHumanizer = () => {
                     { value: "gemini-3.6-flash", label: t(superHumanizerLanguage || 'ru', 'shModelFast') },
                     { value: "gemini-3.5-flash-lite", label: t(superHumanizerLanguage || 'ru', 'shModelInstant') },
                     { value: "gemini-3.7-flash", label: t(superHumanizerLanguage || 'ru', 'shModelExp') },
-                    { value: "gemini-3.1-pro", label: t(superHumanizerLanguage || 'ru', 'shModelDeep') }
+                    { value: "gemini-3.1-pro-preview", label: t(superHumanizerLanguage || 'ru', 'shModelDeep') }
                   ]}
                 />
               </div>
@@ -763,6 +781,74 @@ const SuperHumanizer = () => {
           </div>
         </div>
       )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* LOGS MODAL                                                    */}
+      {/* ------------------------------------------------------------- */}
+      {showLogs && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', 
+          backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', 
+          justifyContent: 'center', zIndex: 10000
+        }}>
+          <div style={{ 
+            width: '600px', maxWidth: '95%', maxHeight: '80vh',
+            borderRadius: '16px', position: 'relative',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--bg-main)',
+            display: 'flex', flexDirection: 'column'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontWeight: 600 }}>
+                <FileText size={18} style={{ color: 'var(--accent)' }}/> Логи моделей API
+              </div>
+              <button className="icon-btn" onClick={() => setShowLogs(false)} style={{ padding: '4px' }}><X size={16}/></button>
+            </div>
+            <div className="custom-scrollbar" style={{ padding: '16px 20px', flex: 1, overflowY: 'auto', fontFamily: 'monospace', fontSize: '13px', color: 'var(--text-muted)' }}>
+              {actionLogs.length === 0 ? (
+                <div>Пока нет логов...</div>
+              ) : (
+                actionLogs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.02)', paddingBottom: '4px' }}>
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                className="secondary-btn" 
+                onClick={() => setActionLogs([])}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                  e.currentTarget.style.transform = 'none';
+                }}
+              >
+                <Trash2 size={14} /> Очистить логи
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

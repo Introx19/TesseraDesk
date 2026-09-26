@@ -12,19 +12,25 @@ const HumanTyper: React.FC = () => {
   const [localText, setLocalText] = useState('');
 
   useEffect(() => {
+    let cleanupState: (() => void) | undefined;
+    let cleanupPaused: (() => void) | undefined;
     if (window.electronAPI) {
       if (window.electronAPI.onHumanTyperState) {
-        window.electronAPI.onHumanTyperState((state: boolean) => {
+        cleanupState = window.electronAPI.onHumanTyperState((state: boolean) => {
           setIsActive(state);
           if (!state) setIsPaused(false);
         });
       }
       if (window.electronAPI.onHumanTyperPaused) {
-        window.electronAPI.onHumanTyperPaused((pausedState: boolean) => {
+        cleanupPaused = window.electronAPI.onHumanTyperPaused((pausedState: boolean) => {
           setIsPaused(pausedState);
         });
       }
     }
+    return () => {
+      if (cleanupState) cleanupState();
+      if (cleanupPaused) cleanupPaused();
+    };
   }, []);
 
   useEffect(() => {

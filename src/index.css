@@ -11,6 +11,16 @@
   --accent: #eab308; /* Yellow Cyberpunk feel */
   --accent-hover: #ca8a04;
   --accent-glow: #eab30880;
+
+  /* ── Compatibility aliases ──────────────────────────────────────────────
+     Several DLC components use these non-standard variable names.
+     Map them to the canonical design tokens so nothing falls back to
+     the browser's default (white background / black text / no accent).
+     ─────────────────────────────────────────────────────────────────── */
+  --bg-color: var(--bg-card);
+  --border-color: var(--glass-border);
+  --text-color: var(--text-main);
+  --accent-color: var(--accent);
 }
 
 @keyframes miniPulse {
@@ -41,6 +51,12 @@
   --accent: #3b82f6; /* Blue app tone */
   --accent-hover: #2563eb;
   --accent-glow: #3b82f680;
+
+  /* Compatibility aliases for DLC */
+  --bg-color: var(--bg-card);
+  --border-color: var(--glass-border);
+  --text-color: var(--text-main);
+  --accent-color: var(--accent);
 }
 
 :root[data-theme="light"] .nav-item.active {
@@ -57,6 +73,12 @@
   --accent: #f97316; /* Peach/Orange */
   --accent-hover: #ea580c;
   --accent-glow: #f9731680;
+
+  /* Compatibility aliases for DLC */
+  --bg-color: var(--bg-card);
+  --border-color: var(--glass-border);
+  --text-color: var(--text-main);
+  --accent-color: var(--accent);
 }
 
 :root[data-theme="soft"] .nav-item.active {
@@ -76,6 +98,22 @@ body.opaque-bg {
 :root[data-theme="soft"] body.opaque-bg {
   --bg-main: #fcf9f2 !important;
   --bg-card: #fffcf5 !important;
+}
+
+/* ── Explicit Compatibility Aliases for ALL App Styles ──
+   Ensures that no matter what Style is selected, the DLC variables
+   never fall back to browser defaults (white box/black text).
+*/
+:root[data-style="neo-brutalism"],
+:root[data-style="minimalist-monochrome"],
+:root[data-style="material-design"],
+:root[data-style="flat-design"],
+:root[data-style="neumorphism"],
+:root[data-style="claymorphism"] {
+  --bg-color: var(--bg-card) !important;
+  --border-color: var(--glass-border) !important;
+  --text-color: var(--text-main) !important;
+  --accent-color: var(--accent) !important;
 }
 
 * {
@@ -462,6 +500,197 @@ body {
   gap: 10px;
 }
 
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Form Elements */
+.btn {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Settings Styles */
+.settings-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  animation: fadeIn 0.3s ease;
+}
+
+.settings-sidebar {
+  width: 175px;
+  background: rgba(0, 0, 0, 0.1);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+}
+
+:root[data-theme="light"] .settings-sidebar,
+:root[data-theme="soft"] .settings-sidebar {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.settings-tab {
+  padding: 15px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9em;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.settings-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.settings-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border-left-color: var(--accent);
+}
+
+.settings-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.settings-content h2 {
+  font-size: 1.2em;
+  margin-bottom: 20px;
+  font-weight: 500;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 10px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+:root[data-theme="light"] .action-btn.active,
+:root[data-theme="soft"] .action-btn.active {
+  color: #fff;
+}
+
+.action-btn.outline {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--text-main);
+}
+.action-btn.outline:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+.action-btn.outline-danger {
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+.action-btn.outline-danger:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -469,6 +698,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .shortcut-input {
@@ -949,7 +1179,200 @@ select.task-input option {
   animation: scaleIn 0.2s ease;
 }
 
-@theme {
+:root[data-style="flat-design"] .btn,
+:root[data-style="flat-design"] .icon-btn,
+:root[data-style="flat-design"] .action-btn,
+:root[data-style="flat-design"] .nav-item,
+:root[data-style="flat-design"] .task-input,
+:root[data-style="flat-design"] .settings-container,
+:root[data-style="flat-design"] .settings-sidebar {
+  border-radius: 0;
+  border: 1px solid var(--glass-border);
+  box-shadow: none;
+  transition: all 0.2s;
+}
+:root[data-style="flat-design"] .btn:hover,
+:root[data-style="flat-design"] .icon-btn:hover,
+:root[data-style="flat-design"] .action-btn:hover,
+:root[data-style="flat-design"] .nav-item:hover {
+  background: var(--text-main);
+  color: var(--bg-main);
+}
+:root[data-style="flat-design"] .sidebar {
+  border-right: 1px solid var(--glass-border);
+}
+:root[data-style="flat-design"] body.opaque-bg {
+  --bg-main: #000000 !important;
+  --bg-card: #0a0a0a !important;
+  --glass-border: #333333 !important;
+}
+:root[data-style="flat-design"][data-theme="light"] body.opaque-bg {
+  --bg-main: #ffffff !important;
+  --bg-card: #f5f5f5 !important;
+  --glass-border: #e0e0e0 !important;
+}
+:root[data-style="flat-design"][data-theme="soft"] body.opaque-bg {
+  --bg-main: #fcf9f2 !important;
+  --bg-card: #fffcf5 !important;
+  --glass-border: #e0d8cc !important;
+}
+
+/* Cyberpunk */
+:root[data-style="cyberpunk"] {
+  --accent: #0ff !important;
+  --bg-main: #000 !important;
+  font-family: 'Courier New', Courier, monospace;
+}
+:root[data-style="cyberpunk"] .app-container {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #0ff;
+  border-radius: 0;
+  box-shadow: inset 0 0 20px rgba(0,255,255,0.2), 0 0 20px rgba(0,255,255,0.2);
+}
+:root[data-style="cyberpunk"] .btn,
+:root[data-style="cyberpunk"] .icon-btn,
+:root[data-style="cyberpunk"] .action-btn,
+:root[data-style="cyberpunk"] .nav-item {
+  border-radius: 0;
+  border: 1px solid #0ff;
+  background: rgba(0, 255, 255, 0.1);
+  color: #0ff;
+  text-shadow: 0 0 5px #0ff;
+}
+:root[data-style="cyberpunk"] .btn:hover,
+:root[data-style="cyberpunk"] .action-btn:hover,
+:root[data-style="cyberpunk"] .nav-item:hover,
+:root[data-style="cyberpunk"] .nav-item.active {
+  background: #0ff;
+  color: #000;
+  box-shadow: 0 0 15px #0ff;
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spinner { animation: spin 1s linear infinite; }
+
+/* --- Premium Image Editor --- */
+.screenshot-toolbar {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.screenshot-toolbar:hover {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.toolbar-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.2s;
+}
+
+.toolbar-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-btn:hover::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.toolbar-btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+.toolbar-btn.primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.toolbar-btn.danger {
+  color: #ff4444;
+}
+.toolbar-btn.danger:hover {
+  background: rgba(255, 68, 68, 0.15);
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.2);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--glass-border);
+  margin: 0 5px;
+  align-self: center;
+}
+
+.color-picker-input {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.color-picker-input:hover {
+  transform: scale(1.1) translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+
+@keyframes progress-stripes {
+  from { background-position: 1rem 0; }
+  to { background-position: 0 0; }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: var(--bg-main);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 20px;
+  width: 300px;
+  max-width: 90%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  animation: scaleIn 0.2s ease;
+}
+
+:root {
   --color-background: #080d0a;
   --color-surface: #121c17;
   --color-primary: #22c55e;
@@ -959,3 +1382,385 @@ select.task-input option {
   --color-textMuted: #94a3b8;
 }
 
+/* ========================================
+   Midnight OLED — Complete Fix
+   ======================================== */
+
+/* 1. Core variables — ALWAYS force pure black regardless of Light/Soft preset */
+:root[data-style="midnight-oled"],
+:root[data-style="midnight-oled"][data-theme="dark"],
+:root[data-style="midnight-oled"][data-theme="light"],
+:root[data-style="midnight-oled"][data-theme="soft"] {
+  --bg-main: #000000 !important;
+  --bg-card: #080808 !important;
+  --bg-hover: #0e0e0e !important;
+  --glass-border: rgba(255, 255, 255, 0.12) !important;
+  --glass-border-hover: rgba(255, 255, 255, 0.28) !important;
+  /* Soft "lunar" glow replaces invisible black shadows */
+  --shadow-sm: 0 0 10px rgba(255, 255, 255, 0.025);
+  --shadow-md: 0 0 20px rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 0 40px rgba(255, 255, 255, 0.06);
+  /* Text — slightly off-white to prevent astigmatism halation */
+  --text-main: #e8e8e8 !important;
+  --text-secondary: rgba(255, 255, 255, 0.7) !important;
+  --text-muted: rgba(255, 255, 255, 0.38) !important;
+  /* Keep accent from the global theme but boost its glow */
+  --accent-glow: rgba(234, 179, 8, 0.5);
+  /* Aliases for DLC components that use non-standard variable names */
+  --bg-color: #080808 !important;
+  --border-color: rgba(255, 255, 255, 0.12) !important;
+  --text-color: #e8e8e8 !important;
+  --accent-color: var(--accent) !important;
+}
+
+/* Force opaque backgrounds to also stay black */
+:root[data-style="midnight-oled"] body.opaque-bg {
+  --bg-main: #000000 !important;
+  --bg-card: #080808 !important;
+}
+
+/* 2. App container */
+:root[data-style="midnight-oled"] .app-container {
+  background: #000000 !important;
+  color: var(--text-main);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 3. Headings — pure white for contrast pop */
+:root[data-style="midnight-oled"] h1,
+:root[data-style="midnight-oled"] h2,
+:root[data-style="midnight-oled"] h3 {
+  color: #ffffff !important;
+}
+
+/* 4. All text elements must be light on black */
+:root[data-style="midnight-oled"] body,
+:root[data-style="midnight-oled"] p,
+:root[data-style="midnight-oled"] span,
+:root[data-style="midnight-oled"] label,
+:root[data-style="midnight-oled"] div,
+:root[data-style="midnight-oled"] li {
+  color: var(--text-main);
+}
+
+/* 5. Base interactive elements */
+:root[data-style="midnight-oled"] .btn,
+:root[data-style="midnight-oled"] .icon-btn,
+:root[data-style="midnight-oled"] .action-btn,
+:root[data-style="midnight-oled"] .nav-item,
+:root[data-style="midnight-oled"] .task-input,
+:root[data-style="midnight-oled"] select.task-input {
+  background: #0a0a0a !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-main) !important;
+  box-shadow: var(--shadow-sm);
+  outline: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fix select arrow color for dark background */
+:root[data-style="midnight-oled"] select.task-input {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-color: #0a0a0a !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 1em !important;
+}
+
+/* 6. Hover states */
+:root[data-style="midnight-oled"] .btn:hover,
+:root[data-style="midnight-oled"] .icon-btn:hover,
+:root[data-style="midnight-oled"] .action-btn:hover,
+:root[data-style="midnight-oled"] .nav-item:hover {
+  background: #121212 !important;
+  border-color: var(--glass-border-hover) !important;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-main) !important;
+}
+
+:root[data-style="midnight-oled"] .task-input:hover,
+:root[data-style="midnight-oled"] .task-input:focus {
+  background: #0e0e0e !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 12px var(--accent-glow) !important;
+  color: var(--text-main) !important;
+  outline: none !important;
+}
+
+/* Kill ALL browser outlines and focus rings inside OLED */
+:root[data-style="midnight-oled"] *:focus,
+:root[data-style="midnight-oled"] *:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 1px var(--accent) !important;
+}
+/* Exception: buttons/nav don't need any ring, just border-color change */
+:root[data-style="midnight-oled"] .btn:focus,
+:root[data-style="midnight-oled"] .icon-btn:focus,
+:root[data-style="midnight-oled"] .action-btn:focus,
+:root[data-style="midnight-oled"] .nav-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 7. Active/selected state — KEY FIX: text must be accent-colored or white, NOT #000 */
+:root[data-style="midnight-oled"] .action-btn.active,
+:root[data-style="midnight-oled"] .btn.active {
+  background: rgba(234, 179, 8, 0.12) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 0 16px var(--accent-glow), inset 0 0 10px rgba(234, 179, 8, 0.05) !important;
+}
+
+:root[data-style="midnight-oled"] .nav-item.active {
+  background: rgba(234, 179, 8, 0.1) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 0 14px var(--accent-glow) !important;
+}
+
+/* 8. Primary/accent buttons — text must be BLACK (it's a filled bright button) */
+:root[data-style="midnight-oled"] .btn.btn-primary,
+:root[data-style="midnight-oled"] .icon-btn.btn-primary,
+:root[data-style="midnight-oled"] .action-btn.btn-primary,
+:root[data-style="midnight-oled"] .btn.btn-accent {
+  background: var(--accent) !important;
+  color: #000000 !important;
+  border: none !important;
+  box-shadow: 0 0 18px var(--accent-glow) !important;
+  font-weight: 700;
+}
+:root[data-style="midnight-oled"] .btn.btn-primary:hover,
+:root[data-style="midnight-oled"] .btn.btn-accent:hover,
+:root[data-style="midnight-oled"] .action-btn.btn-primary:hover {
+  box-shadow: 0 0 28px var(--accent-glow) !important;
+  filter: brightness(1.1);
+  color: #000000 !important;
+}
+
+/* 9. Sidebar & navigation */
+:root[data-style="midnight-oled"] .sidebar,
+:root[data-style="midnight-oled"] .compact-sidebar {
+  background: #000000 !important;
+  border-right: 1px solid var(--glass-border) !important;
+}
+
+/* 10. Settings panels */
+:root[data-style="midnight-oled"] .settings-container {
+  background: #000000 !important;
+  border-color: var(--glass-border) !important;
+}
+:root[data-style="midnight-oled"] .settings-sidebar {
+  background: #050505 !important;
+  border-right-color: var(--glass-border) !important;
+}
+:root[data-style="midnight-oled"] .settings-content {
+  background: #000000 !important;
+  color: var(--text-main) !important;
+}
+:root[data-style="midnight-oled"] .settings-tab {
+  color: var(--text-muted) !important;
+}
+:root[data-style="midnight-oled"] .settings-tab:hover {
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+:root[data-style="midnight-oled"] .settings-tab.active {
+  color: var(--accent) !important;
+  background: rgba(234, 179, 8, 0.06) !important;
+  border-left-color: var(--accent) !important;
+}
+
+/* 11. Cards and sections */
+:root[data-style="midnight-oled"] .dlc-card {
+  background: #080808 !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-main) !important;
+}
+
+/* 12. Library tool cards — fix white icon box (uses --bg-color which doesn't exist) */
+:root[data-style="midnight-oled"] .library-icon-wrap {
+  background: #101010 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 13. Modals and overlays */
+:root[data-style="midnight-oled"] .modal-content {
+  background: #060606 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 14. Inputs, textareas, selects */
+:root[data-style="midnight-oled"] input,
+:root[data-style="midnight-oled"] textarea,
+:root[data-style="midnight-oled"] select {
+  background: #0a0a0a !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-main) !important;
+}
+:root[data-style="midnight-oled"] input::placeholder,
+:root[data-style="midnight-oled"] textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+:root[data-style="midnight-oled"] input:focus,
+:root[data-style="midnight-oled"] textarea:focus,
+:root[data-style="midnight-oled"] select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 12px var(--accent-glow) !important;
+  outline: none;
+}
+
+/* 15. Checkboxes — must be visible on black */
+:root[data-style="midnight-oled"] input[type="checkbox"] {
+  accent-color: var(--accent) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  background: #0a0a0a !important;
+}
+
+/* 16. Dropdown menus (select option) */
+:root[data-style="midnight-oled"] select option {
+  background: #0d0d0d !important;
+  color: var(--text-main) !important;
+}
+
+/* 17. Scrollbar must be visible but subtle */
+:root[data-style="midnight-oled"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+:root[data-style="midnight-oled"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* 18. Win buttons (minimize/close) */
+:root[data-style="midnight-oled"] .win-btn {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+:root[data-style="midnight-oled"] .win-btn:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: var(--text-main) !important;
+}
+
+/* 19. Notification badge, pin button — visible on pure black */
+:root[data-style="midnight-oled"] .library-pin-btn-unpinned {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-muted) !important;
+}
+
+/* 20. Info / muted text blocks */
+:root[data-style="midnight-oled"] .text-muted,
+:root[data-style="midnight-oled"] [style*="color: var(--text-muted)"] {
+  color: rgba(255, 255, 255, 0.38) !important;
+}
+
+/* ── Claymorphism Redesign ── */
+:root[data-style="claymorphism"] {
+  /* Cards: Large, soft, slightly raised surface */
+  --clay-card: 10px 10px 24px rgba(0, 0, 0, 0.06), 
+               inset -4px -4px 10px rgba(0, 0, 0, 0.03), 
+               inset 4px 4px 10px rgba(255, 255, 255, 0.8);
+               
+  /* Buttons: Puffy, highly extruded "gummy" feel */
+  --clay-btn: 6px 6px 14px rgba(0, 0, 0, 0.08), 
+              inset -4px -4px 8px rgba(0, 0, 0, 0.06), 
+              inset 4px 4px 8px rgba(255, 255, 255, 0.9);
+  
+  --clay-btn-hover: 8px 8px 18px rgba(0, 0, 0, 0.12), 
+                    inset -4px -4px 8px rgba(0, 0, 0, 0.06), 
+                    inset 4px 4px 8px rgba(255, 255, 255, 1);
+                    
+  --clay-btn-active: 2px 2px 6px rgba(0, 0, 0, 0.05), 
+                     inset -6px -6px 12px rgba(0, 0, 0, 0.1), 
+                     inset 6px 6px 12px rgba(255, 255, 255, 0.7);
+                     
+  /* Inputs: Pressed-in indentations */
+  --clay-inset: inset 6px 6px 12px rgba(0, 0, 0, 0.06), 
+                inset -6px -6px 12px rgba(255, 255, 255, 0.8),
+                0 0 0 1px rgba(255,255,255, 0.3);
+                
+  --border-radius: 28px;
+  --border-radius-sm: 18px;
+}
+
+:root[data-style="claymorphism"][data-theme="dark"] {
+  /* Dark mode clay should look like soft matte black plastic, not muddy */
+  --clay-card: 10px 10px 30px rgba(0, 0, 0, 0.4), 
+               inset -3px -3px 8px rgba(0, 0, 0, 0.3), 
+               inset 3px 3px 8px rgba(255, 255, 255, 0.06);
+               
+  --clay-btn: 6px 6px 16px rgba(0, 0, 0, 0.4), 
+              inset -4px -4px 8px rgba(0, 0, 0, 0.3), 
+              inset 4px 4px 8px rgba(255, 255, 255, 0.08);
+              
+  --clay-btn-hover: 8px 8px 20px rgba(0, 0, 0, 0.5), 
+                    inset -4px -4px 8px rgba(0, 0, 0, 0.3), 
+                    inset 4px 4px 8px rgba(255, 255, 255, 0.12);
+                    
+  --clay-btn-active: 2px 2px 6px rgba(0, 0, 0, 0.2), 
+                     inset -4px -4px 10px rgba(0, 0, 0, 0.4), 
+                     inset 4px 4px 10px rgba(255, 255, 255, 0.03);
+                     
+  --clay-inset: inset 4px 4px 10px rgba(0, 0, 0, 0.4), 
+                inset -4px -4px 10px rgba(255, 255, 255, 0.04),
+                0 0 0 1px rgba(0,0,0, 0.5);
+}
+
+/* Base resets for Claymorphism elements */
+:root[data-style="claymorphism"] .btn,
+:root[data-style="claymorphism"] .icon-btn,
+:root[data-style="claymorphism"] .action-btn,
+:root[data-style="claymorphism"] .nav-item,
+:root[data-style="claymorphism"] .task-input,
+:root[data-style="claymorphism"] select.task-input,
+:root[data-style="claymorphism"] .dlc-card {
+  background: var(--bg-card);
+  border: none !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* DLC Cards */
+:root[data-style="claymorphism"] .dlc-card {
+  border-radius: var(--border-radius);
+  box-shadow: var(--clay-card) !important;
+}
+
+/* Buttons */
+:root[data-style="claymorphism"] .btn,
+:root[data-style="claymorphism"] .icon-btn,
+:root[data-style="claymorphism"] .action-btn,
+:root[data-style="claymorphism"] .nav-item {
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--clay-btn) !important;
+}
+
+:root[data-style="claymorphism"] .btn:hover,
+:root[data-style="claymorphism"] .icon-btn:hover,
+:root[data-style="claymorphism"] .action-btn:hover,
+:root[data-style="claymorphism"] .nav-item:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--clay-btn-hover) !important;
+}
+
+:root[data-style="claymorphism"] .btn:active,
+:root[data-style="claymorphism"] .btn.active,
+:root[data-style="claymorphism"] .action-btn:active,
+:root[data-style="claymorphism"] .action-btn.active,
+:root[data-style="claymorphism"] .nav-item.active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: var(--clay-btn-active) !important;
+  background: var(--bg-card) !important;
+  color: var(--accent) !important;
+}
+
+/* Primary/Accent buttons */
+:root[data-style="claymorphism"] .btn.btn-primary,
+:root[data-style="claymorphism"] .btn.btn-accent {
+  background: var(--accent);
+  color: #ffffff !important;
+}
+
+:root[data-style="claymorphism"][data-theme="soft"] {
+  --bg-main: #f3f0eb;
+  --bg-card: #fdfbf8;
+}

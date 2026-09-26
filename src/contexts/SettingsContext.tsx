@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Theme = 'dark' | 'light' | 'soft';
-export type AppStyle = 'glassmorphism' | 'neo-brutalism' | 'minimalist-monochrome' | 'material-design' | 'flat-design' | 'neumorphism' | 'cyberpunk';
+export type AppStyle = 'glassmorphism' | 'neo-brutalism' | 'minimalist-monochrome' | 'material-design' | 'flat-design' | 'neumorphism' | 'cyberpunk' | 'midnight-oled' | 'claymorphism';
+
+export interface LibraryFolder {
+  id: string;
+  name: string;
+  tools: string[];
+}
 
 export interface SettingsState {
   theme: Theme;
@@ -79,6 +85,7 @@ export interface SettingsState {
   panicHotkey: string;
   discordWebhookUrl: string;
   humanTyperEnterMode: 'enter' | 'shift+enter';
+  libraryFolders: LibraryFolder[];
 }
 
 export const defaultSettings: SettingsState = {
@@ -165,7 +172,8 @@ export const defaultSettings: SettingsState = {
   superHumanizerLanguage: 'en',
   panicHotkey: 'F9',
   discordWebhookUrl: '',
-  humanTyperEnterMode: 'enter'
+  humanTyperEnterMode: 'enter',
+  libraryFolders: []
 };
 
 interface SettingsContextType extends SettingsState {
@@ -186,7 +194,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           shortcuts: { ...defaultSettings.shortcuts, ...(parsed.shortcuts || {}) },
           activeTools: { ...defaultSettings.activeTools, ...(parsed.activeTools || {}) },
           pinnedTools: { ...defaultSettings.pinnedTools, ...(parsed.pinnedTools || {}) },
-          pinnedOrder: parsed.pinnedOrder || defaultSettings.pinnedOrder
+          pinnedOrder: parsed.pinnedOrder || defaultSettings.pinnedOrder,
+          libraryFolders: parsed.libraryFolders || defaultSettings.libraryFolders
         };
       } catch (e) {
         return defaultSettings;
