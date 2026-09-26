@@ -109,7 +109,7 @@ const SettingsAboutTab: React.FC = () => {
         >
           TesseraDesk
         </h2>
-        <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.8.7</div>
+        <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.8.8</div>
       </div>
       
       <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
