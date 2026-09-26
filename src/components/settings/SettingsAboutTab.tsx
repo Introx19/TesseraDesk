@@ -10,8 +10,13 @@ const SettingsAboutTab: React.FC = () => {
   const secretClicks = useRef(0);
   const lastClickTime = useRef(0);
   
+  const [appVersion, setAppVersion] = useState('...');
   const [secretModalOpen, setSecretModalOpen] = useState(false);
   const [secretCode, setSecretCode] = useState('');
+  
+  useEffect(() => {
+    window.electronAPI?.getAppVersion?.().then(v => setAppVersion(v)).catch(() => setAppVersion('1.8.8'));
+  }, []);
   
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -109,7 +114,7 @@ const SettingsAboutTab: React.FC = () => {
         >
           TesseraDesk
         </h2>
-        <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} 1.8.8</div>
+        <div style={{ color: 'var(--text-muted)' }}>{t(language as Lang, 'currentVersion')} {appVersion}</div>
       </div>
       
       <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>

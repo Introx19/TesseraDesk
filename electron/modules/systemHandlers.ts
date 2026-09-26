@@ -72,6 +72,8 @@ let currentScreenshotDelay = 0;
 let tray: Tray | null = null;
 
 export function initSystemHandlers() {
+  ipcMain.handle('get-app-version', () => app.getVersion());
+
   ipcMain.handle('kill-port', async (event, port) => {
     if (!/^\d+$/.test(String(port))) return { success: false, message: 'Invalid port number.' };
     return new Promise((resolve) => {

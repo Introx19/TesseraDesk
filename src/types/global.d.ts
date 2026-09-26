@@ -61,6 +61,7 @@ export interface ElectronAPI {
   sendWebhook: (url: string, filePath: string, message?: string) => Promise<{ success: boolean; status?: number; text?: string; error?: string }>;
   verifyPluginZip: (zipPath: string) => Promise<{valid: boolean, error?: string}>;
   updateHumanTyperText: (text: string) => void;
+  getAppVersion: () => Promise<string>;
 }
 
 declare global {

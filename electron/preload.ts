@@ -121,5 +121,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uninstallPlugin: (folderName: string) => ipcRenderer.invoke('uninstall-plugin', folderName),
   readPluginFile: (folderName: string, filePath: string) => ipcRenderer.invoke('read-plugin-file', folderName, filePath),
   sendWebhook: (url: string, filePath: string, message?: string) => ipcRenderer.invoke('send-webhook', url, filePath, message),
-  verifyPluginZip: (zipPath: string) => ipcRenderer.invoke('verify-plugin-zip', zipPath)
+  verifyPluginZip: (zipPath: string) => ipcRenderer.invoke('verify-plugin-zip', zipPath),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version')
 })
